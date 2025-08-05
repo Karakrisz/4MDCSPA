@@ -3,8 +3,9 @@
     <Hero />
     <!-- <Discounts /> -->
     <AboutSection />
-    <!-- <ContactSection /> -->
-    <!-- <BlogSection /> -->
+    <OurwordSection />
+    <TeamSection />
+    <CompetitionsSection />
   </main>
 </template>
 

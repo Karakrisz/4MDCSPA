@@ -11,10 +11,10 @@
     </div>
 
     <!-- About Body: Full Width -->
-    <div class="container mx-auto w-full px-0 py-12 grid grid-cols-1 md:grid-cols-2 about-body">
+    <div class="container mx-auto w-full px-0 grid grid-cols-1 md:grid-cols-2 about-body">
       <!-- Illustration / Image -->
       <div class="w-full">
-        <img
+        <NuxtImg
           src="/img/about.svg"
           alt="Move Dance Sport Academy"
           class="w-full h-full object-cover shadow-md"
@@ -47,10 +47,6 @@
     </div>
   </section>
 </template>
-
-<script setup>
-// Static section, no reactive data
-</script>
 
 <style scoped>
 .about-section {
