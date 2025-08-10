@@ -89,7 +89,7 @@ onMounted(() => {
         <!-- Show All Button -->
         <div class="mt-8 text-center">
           <button class="bg-[#242424] text-white text-[16px] uppercase font-bold py-4 px-20 shadow-lg show-all-button opacity-0">
-            Show All
+            Show AllL
           </button>
         </div>
       </div>
