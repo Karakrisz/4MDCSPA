@@ -9,13 +9,13 @@ const competitions = [
   <section class="relative text-white">
     <!-- Background image -->
     <div class="absolute inset-0">
-      <NuxtImg src="/img/about.svg" alt="Competitions background" class="w-full h-full object-cover" />
+      <NuxtImg src="/img/com.webp" alt="Competitions background" class="w-full h-full object-cover" />
       <div class="absolute inset-0 bg-black opacity-60"></div>
     </div>
 
     <div class="relative container mx-auto px-4 py-24 flex flex-col items-center">
       <!-- Title -->
-      <h2 class="text-4xl md:text-5xl font-extrabold uppercase mb-12 text-center text-white">Join the Competitions</h2>
+      <h2 class="text-[24px] lg:text-[64px] font-extrabold font-unbounded uppercase mb-5 text-center text-white">Join the Competitions</h2>
 
       <!-- Competitions Box -->
       <div class="bg-white rounded-lg shadow-lg w-full max-w-2xl p-8">
