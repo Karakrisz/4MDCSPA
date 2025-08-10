@@ -4,8 +4,8 @@
       <!-- Left Column: Logo & Socials -->
       <div>
         <!-- Logo / Title -->
-        <h2 class="text-4xl font-extrabold uppercase">Move Dance</h2>
-        <p class="text-xl font-semibold uppercase mt-1">Sport Academy</p>
+        <h2 class="text-4xl font-extrabold uppercase font-unbounded">Move Dance</h2>
+        <p class="text-xl font-semibold uppercase mt-1 font-unbounded">Sport Academy</p>
 
         <!-- Social Icons -->
         <div class="flex space-x-6 mt-6">
@@ -28,11 +28,11 @@
       </div>
 
       <!-- Right Column: Contact Info & Credit -->
-      <div class="flex flex-col justify-between h-full">
+      <div class="flex flex-col justify-between h-full text-end">
         <!-- Contact Details -->
         <div>
-          <p class="font-semibold">Move Dance Sport Academy LLC</p>
-          <address class="not-italic mt-2 text-sm">
+          <p class="uppercase">Move Dance Sport Academy LLC</p>
+          <address class="not-italic text-sm">
             Office: 119-35 Insurance Building,<br />
             Al Rega Dubai, UAE
           </address>
@@ -43,7 +43,7 @@
         </div>
 
         <!-- Studio Credit -->
-        <div class="mt-8 md:mt-0">
+        <div class="mt-20">
           <a href="https://digitalseedstudio.com" target="_blank" rel="noopener" class="inline-block opacity-75 hover:opacity-100">
             <svg xmlns="http://www.w3.org/2000/svg" width="88" height="36" viewBox="0 0 88 36" fill="none">
               <g opacity="0.4" clip-path="url(#clip0_2013_87)">

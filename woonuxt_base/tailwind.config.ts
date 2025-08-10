@@ -12,7 +12,7 @@ export default {
     extend: {
       colors: {
         'digital-seed': '#1AC78D',
-        'primary': '#BB3434',
+        'primary': '#FA3DFF',
         'primary-dark': '#993c29',
         'secondary': '#5b5452',
         'secondary-dark': '#423a38',

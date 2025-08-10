@@ -15,20 +15,18 @@ const links = [
 <template>
   <header class="z-50 top-0 bg-white">
     <div class="menu container flex justify-between items-center">
-
       <!-- Menü és kosár jobb oldalt -->
-      <div class="flex items-center justify-center w-full">
+      <div class="flex items-center lg:justify-center w-full">
         <!-- Mobile menu trigger -->
-        <MenuTrigger class="lg:hidden" />
-        
+        <MenuTrigger class="lg:hidden ml-5" />
+
         <!-- Desktop navigáció -->
         <div class="flex items-center justify-between w-full max-w-6xl hidden lg:flex">
-          <NuxtLink 
-            v-for="link in links" 
-            :key="link.name" 
-            :to="link.link" 
-            class="text-gray-700 hover:text-[#FF5D19] transition-colors duration-200 text-sm font-unbounded"
-          >
+          <NuxtLink
+            v-for="link in links"
+            :key="link.name"
+            :to="link.link"
+            class="text-gray-700 hover:text-[#FF5D19] transition-colors duration-200 text-sm font-unbounded">
             {{ link.name }}
           </NuxtLink>
         </div>
@@ -74,5 +72,11 @@ header {
 /* Default link stílus */
 :deep(a:not(.router-link-active)) {
   font-weight: 300;
+}
+
+@media screen and (max-width: 767px) {
+  .menu[data-v-7cac02f6] {
+    width: 85%;
+  }
 }
 </style>
