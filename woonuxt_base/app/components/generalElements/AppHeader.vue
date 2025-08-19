@@ -1,15 +1,39 @@
 <script setup lang="ts">
 const links = [
   { name: 'HOME', link: '/', prefetch: true },
-  { name: 'INTRODUCING', link: '/sub' },
+  { name: 'INTRODUCING', link: '/#about'}, 
+  { name: 'CHAMPIONS', link: '/#champions' },
   { name: 'COACHES', link: '/sub' },
-  { name: 'COURSES', link: '/sub' },
   { name: 'COMPETITIONS', link: '/sub' },
   { name: 'MEDIA', link: '/sub' },
   { name: 'WEBSHOP', link: '/sub' },
   { name: 'APP', link: '/sub' },
   { name: 'CONTACT', link: '/sub', prefetch: true },
 ];
+
+const activeLink = ref<string | null>(null);
+
+const handleLinkClick = (link: any, event: Event) => {
+  // Ha anchor link és ugyanazon az oldalon vagyunk
+  if (link.link.startsWith('/#')) {
+    event.preventDefault();
+    const elementId = link.link.substring(2); // Eltávolítjuk a "/#" részt
+    const element = document.getElementById(elementId);
+    
+    if (element) {
+      // Aktív link beállítása
+      activeLink.value = link.name;
+      
+      element.scrollIntoView({ 
+        behavior: 'smooth',
+        block: 'start'
+      });
+    }
+  } else {
+    // Normál navigáció esetén töröljük az aktív anchor linket
+    activeLink.value = null;
+  }
+};
 </script>
 
 <template>
@@ -22,13 +46,28 @@ const links = [
 
         <!-- Desktop navigáció -->
         <div class="flex items-center justify-between w-full max-w-6xl hidden lg:flex">
-          <NuxtLink
-            v-for="link in links"
-            :key="link.name"
-            :to="link.link"
-            class="text-gray-700 hover:text-[#FF5D19] transition-colors duration-200 text-sm font-unbounded">
-            {{ link.name }}
-          </NuxtLink>
+          <template v-for="link in links" :key="link.name">
+            <!-- Anchor linkek (smooth scroll) -->
+            <button
+              v-if="link.link.startsWith('/#')"
+              @click="handleLinkClick(link, $event)"
+              :class="{
+                'font-medium': activeLink === link.name,
+                'font-light': activeLink !== link.name
+              }"
+              class="text-gray-700 hover:text-[#FF5D19] transition-colors duration-200 text-sm font-unbounded bg-transparent border-none cursor-pointer">
+              {{ link.name }}
+            </button>
+            
+            <!-- Normál navigáció linkek -->
+            <NuxtLink
+              v-else
+              :to="link.link"
+              @click="handleLinkClick(link, $event)"
+              class="text-gray-700 hover:text-[#FF5D19] transition-colors duration-200 text-sm font-unbounded">
+              {{ link.name }}
+            </NuxtLink>
+          </template>
         </div>
 
         <!-- Jobb oldali gombok -->
@@ -44,6 +83,11 @@ const links = [
 </template>
 
 <style scoped>
+/* Smooth scroll CSS támogatás */
+html {
+  scroll-behavior: smooth;
+}
+
 header {
   background-color: transparent;
   height: 0;
@@ -64,7 +108,16 @@ header {
   background: rgba(255, 255, 255, 0.1);
 }
 
-/* Aktív link stílus */
+/* Aktív anchor link stílus (kézi kezelés) */
+.font-medium {
+  font-weight: 500 !important;
+}
+
+.font-light {
+  font-weight: 300 !important;
+}
+
+/* Router aktív link stílus (csak normál navigációnál) */
 :deep(.router-link-active) {
   font-weight: 500 !important;
 }

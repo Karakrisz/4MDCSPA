@@ -71,7 +71,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <section class="relative text-white pt-16" ref="championsSection">
+  <section class="relative text-white pt-16" ref="championsSection" id="champions">
     <!-- Background Image & Overlay -->
     <div class="absolute inset-0 bg-container">
       <NuxtImg src="/img/word.webp" alt="Champions background" class="w-full h-full object-cover bg-image" />

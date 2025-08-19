@@ -1,5 +1,5 @@
 <template>
-  <section class="bg-gray-900 text-white about-section" ref="aboutSection">
+  <section class="bg-gray-900 text-white about-section" ref="aboutSection" id="about">
     <!-- Hero Heading -->
     <div class="container mx-auto px-4 py-12 text-center about-heading">
       <h4 class="text-[20px] lg:text-[20px] font-unbounded uppercase font-bold heading-main opacity-0">
