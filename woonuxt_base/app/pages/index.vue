@@ -5,6 +5,7 @@
     <AboutSection />
     <OurwordSection />
     <TeamSection />
+    <GoogleMapSection />
     <CompetitionsSection />
   </main>
 </template>
