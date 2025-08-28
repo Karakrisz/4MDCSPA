@@ -107,7 +107,7 @@ useHead({
             <!-- CTA Button -->
             <div class="pt-4">
               <NuxtLink to="mate-hollossy"
-                class="bg-gradient-to-r from-[#ff29f7] to-[#24d3ee] text-white font-semibold py-3 px-8 rounded-lg transform hover:scale-105 transition-all duration-300 hover:shadow-lg hover:shadow-[#ff29f7]/25 active:scale-95">
+                class="bg-gradient-to-r from-[#ff29f7] to-[#24d3ee] text-white font-semibold text-[9px] lg:text-[16px] py-3 px-8 rounded-lg transform hover:scale-105 transition-all duration-300 hover:shadow-lg hover:shadow-[#ff29f7]/25 active:scale-95">
                 CONTINUE TO MÁTÉ HOLLÓSSY'S PAGE
               </NuxtLink>
             </div>
