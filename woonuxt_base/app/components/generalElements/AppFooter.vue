@@ -1,5 +1,5 @@
 <template>
-  <footer class="bg-[#242424] text-white py-12">
+  <footer class="bg-[#242424] text-white py-12" id="MEDIA">
     <div class="container mx-auto px-4 flex flex-col md:flex-row justify-between items-start">
       <!-- Left Column: Logo & Socials -->
       <div>

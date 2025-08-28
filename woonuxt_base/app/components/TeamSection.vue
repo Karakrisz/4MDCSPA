@@ -1,11 +1,11 @@
 <script setup>
 const coaches = [
-  { name: 'Tamás Kuptsulik', role: 'Academy Director / Coach', photo: '/img/tamas.webp' },
-  { name: 'Veronika Lengyel', role: 'Academy Co-owner / Coach', photo: '/img/veronika.webp' },
-  { name: 'Gábor Mészáros', role: 'Academy Co-owner / Coach', photo: '/img/gabor.webp' },
-  { name: 'Bonita Lengyel Mészárosné', role: 'Coach', photo: '/img/boni.webp' },
-  { name: 'Patrik Toma', role: 'Coach', photo: '/img/patrik.webp' },
-  { name: 'Máté Hollóssy', role: 'Coach', photo: '/img/mate.webp' },
+  { name: 'Tamás Kuptsulik', role: 'Academy Director / Coach', photo: '/img/tamas.webp', slug: 'tamas-kuptsulik' },
+  { name: 'Veronika Lengyel', role: 'Academy Co-owner / Coach', photo: '/img/veronika.webp', slug: 'veronika-lengyel' },
+  { name: 'Gábor Mészáros', role: 'Academy Co-owner / Coach', photo: '/img/gabor.webp', slug: 'gabor-meszaros' },
+  { name: 'Bonita Lengyel Mészárosné', role: 'Coach', photo: '/img/boni.webp', slug: 'bonita-lengyel' },
+  { name: 'Patrik Toma', role: 'Coach', photo: '/img/patrik.webp', slug: 'patrik-toma' },
+  { name: 'Máté Hollóssy', role: 'Coach', photo: '/img/mate.webp', slug: 'mate-hollossy' },
 ];
 
 import { ref, onMounted, onUnmounted } from 'vue'
@@ -47,7 +47,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <section class="relative text-white pt-16 coaching-section" ref="coachingSection">
+  <section class="relative text-white pt-16 coaching-section" ref="coachingSection" id="COACHES">
     <!-- Gradient Background -->
     <div class="absolute inset-0 mix-blend-multiply gradient-bg" style="background: linear-gradient(180deg, rgba(0, 0, 0, 0) 55.37%, #000 100%)"></div>
 
@@ -65,10 +65,11 @@ onMounted(() => {
 
       <!-- Team Grid with larger gap and taller images -->
       <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-1">
-        <div 
+        <NuxtLink 
           v-for="(coach, i) in coaches" 
           :key="i" 
-          class="relative overflow-hidden coach-card opacity-0"
+          :to="`/${coach.slug}`"
+          class="relative overflow-hidden coach-card opacity-0 block group cursor-pointer"
         >
           <!-- Image with color overlay and fixed height -->
           <div class="relative image-container">
@@ -84,14 +85,21 @@ onMounted(() => {
           
           <!-- Text block -->
           <div class="absolute bottom-0 left-0 w-full p-4 bg-gradient-to-t from-black to-transparent text-overlay">
-            <h3 class="text-[20px] font-unbounded font-medium uppercase coach-name">
+            <h3 class="text-[20px] font-unbounded font-medium uppercase coach-name group-hover:text-[#FE2AF7] transition-colors duration-300">
               {{ coach.name }}
             </h3>
-            <p class="text-[14px] uppercase mt-1 coach-role">
+            <p class="text-[14px] uppercase mt-1 coach-role group-hover:text-[#24d3ee] transition-colors duration-300">
               {{ coach.role }}
             </p>
           </div>
-        </div>
+
+          <!-- Click indicator - megjelenik hover-nél -->
+          <div class="absolute inset-0 bg-gradient-to-br from-[#ff29f7]/10 to-[#24d3ee]/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+            <div class="bg-black/70 px-4 py-2 rounded-lg transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
+              <span class="text-white text-sm font-medium">View Profile</span>
+            </div>
+          </div>
+        </NuxtLink>
       </div>
     </div>
     
@@ -228,7 +236,7 @@ onMounted(() => {
   transform: translateY(0);
 }
 
-/* Coach kártya hover effektek */
+/* Coach kártya hover effektek - módosítva NuxtLink-hez */
 .coach-card:hover {
   transform: translateY(-15px) scale(1.05);
   transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
@@ -245,14 +253,15 @@ onMounted(() => {
   mix-blend-mode: overlay;
 }
 
-.coach-card:hover .coach-name {
-  color: #FE2AF7;
+/* Link hover effektek */
+.group:hover .coach-name {
+  color: #FE2AF7 !important;
   text-shadow: 0 0 15px rgba(254, 42, 247, 0.6);
   transform: translateY(-2px);
 }
 
-.coach-card:hover .coach-role {
-  color: #00BCD4;
+.group:hover .coach-role {
+  color: #24d3ee !important;
   transform: translateY(-1px);
 }
 
@@ -430,5 +439,16 @@ onMounted(() => {
 
 .coach-card.animate-in .coach-image {
   animation: none;
+}
+
+/* Link alapértelmezett stílusok felülírása */
+.coach-card {
+  text-decoration: none;
+  color: inherit;
+}
+
+.coach-card:focus {
+  outline: 2px solid #FE2AF7;
+  outline-offset: 2px;
 }
 </style>

@@ -3,14 +3,14 @@ const { toggleMobileMenu } = useHelpers();
 
 const links = [
   { text: 'HOME', to: '/', prefetch: false },
-  { text: 'INTRODUCING', to: '/sub', prefetch: false },
-  { text: 'COACHES', to: '/sub', prefetch: false },
-  { text: 'COURSES', to: '/sub', prefetch: false },
-  { text: 'COMPETITIONS', to: '/sub', prefetch: false },
-  { text: 'MEDIA', to: '/sub', prefetch: false },
-  { text: 'WEBSHOP', to: '/sub', prefetch: false },
-  { text: 'APP', to: '/sub', prefetch: false },
-  { text: 'CONTACT', to: '/sub', prefetch: false },
+  { text: 'INTRODUCING', to: '/#about', prefetch: false },
+  { text: 'CHAMPIONS', to: '/#champions', prefetch: false },
+  { text: 'COACHES', to: '/#COACHES', prefetch: false },
+  { text: 'COMPETITIONS', to: '/#COMPETITIONS', prefetch: false },
+  { text: 'MEDIA', to: '/#MEDIA', prefetch: false },
+  // { text: 'WEBSHOP', to: '/sub', prefetch: false },
+  // { text: 'APP', to: '/sub', prefetch: false },
+  { text: 'CONTACT', to: '/#MEDIA', prefetch: false },
 ];
 </script>
 

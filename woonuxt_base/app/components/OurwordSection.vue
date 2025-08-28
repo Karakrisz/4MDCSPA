@@ -1,35 +1,50 @@
 <script setup>
 const champions = [
+  // 2012
   { category: 'Juvenile Couple', names: 'Ádám Király & Dorottya Novák', year: '2012' },
-  { category: 'Soldiers Junior Couple Formation', names: '', year: '2013' },
-  { category: 'Juvenile Couple', names: 'Ádám Király & Dorottya Novák', year: '2013' },
-  { category: 'Juvenile Couple', names: 'Ádám Király & Dorottya Novák', year: '2014' },
-  { category: 'Juvenile Couple', names: 'Ádám Király & Dorottya Novák', year: '2014' },
-  { category: 'Juvenile Couple', names: 'Ádám Király & Dorottya Novák', year: '2015' },
-  { category: 'Juvenile Couple', names: 'Ádám Király & Dorottya Novák', year: '2016' },
-  { category: 'Juvenile Couple', names: 'Ádám Király & Dorottya Novák', year: '2018' },
-  { category: 'Juvenile Couple', names: 'Ádám Király & Dorottya Novák', year: '2019' },
-  { category: 'Juvenile Couple', names: 'Ádám Király & Dorottya Novák', year: '2019' },
-  { category: 'Juvenile Couple', names: 'Ádám Király & Dorottya Novák', year: '2019' },
-  { category: 'Juvenile Couple', names: 'Ádám Király & Dorottya Novák', year: '2019' },
-  { category: 'Juvenile Couple', names: 'Ádám Király & Dorottya Novák', year: '2021' },
-  { category: 'Juvenile Couple', names: 'Ádám Király & Dorottya Novák', year: '2021' },
-  { category: 'Juvenile Couple', names: 'Ádám Király & Dorottya Novák', year: '2021' },
-  { category: 'Juvenile Couple', names: 'Ádám Király & Dorottya Novák', year: '2021' },
-  { category: 'Juvenile Couple', names: 'Ádám Király & Dorottya Novák', year: '2022' },
-  { category: 'Juvenile Couple', names: 'Ádám Király & Dorottya Novák', year: '2022' },
-  { category: 'Juvenile Couple', names: 'Ádám Király & Dorottya Novák', year: '2022' },
-  { category: 'Juvenile Couple', names: 'Ádám Király & Dorottya Novák', year: '2022' },
-  { category: 'Juvenile Couple', names: 'Ádám Király & Dorottya Novák', year: '2022' },
-  { category: 'Juvenile Couple', names: 'Ádám Király & Dorottya Novák', year: '2022' },
-  { category: 'Juvenile Couple', names: 'Ádám Király & Dorottya Novák', year: '2023' },
-  { category: 'Juvenile Couple', names: 'Ádám Király & Dorottya Novák', year: '2023' },
-  { category: 'Juvenile Couple', names: 'Ádám Király & Dorottya Novák', year: '2022' },
-  { category: 'Juvenile Couple', names: 'Ádám Király & Dorottya Novák', year: '2022' },
-  { category: 'Juvenile Couple', names: 'Ádám Király & Dorottya Novák', year: '2023' },
-  { category: 'Juvenile Couple', names: 'Ádám Király & Dorottya Novák', year: '2023' },
-  { category: 'Juvenile Couple', names: 'Ádám Király & Dorottya Novák', year: '2024' },
-  { category: 'Juvenile Couple', names: 'Ádám Király & Dorottya Novák', year: '2024' },
+  
+  // 2013  
+  { category: 'Junior Couple Formation', names: 'Soldiers', year: '2013' },
+  { category: 'Junior Girls Formation', names: 'Party Girls', year: '2013' },
+  
+  // 2014
+  { category: 'Junior Couple', names: 'Ádám Király - Fanni Zetl', year: '2014' },
+  { category: 'Junior Girls Formation', names: 'Party Girls', year: '2014' },
+  { category: 'Junior Girls Formation', names: 'Party Girls', year: '2015' },
+  
+  // 2016
+  { category: 'Ladies Formation', names: 'Szupergirls', year: '2016' },
+  { category: 'Ladies Formation', names: 'The Szupergirls', year: '2018' },
+  { category: 'Junior Girls Formation', names: 'Party Team', year: '2018' },
+  
+  // 2019
+  { category: 'Junior Couple Formation', names: 'Home Alone', year: '2019' },
+  { category: 'Junior Girls Formation', names: 'Party Team', year: '2019' },
+  { category: 'Ladies Formation', names: 'The Szupergirls', year: '2019' },
+  
+  // 2021
+  { category: 'Ladies Formation', names: 'The Szupergirls', year: '2021' },
+  { category: 'Junior Couple Formation', names: 'Home Alone', year: '2021' },
+  { category: 'Junior Couple', names: 'Attila Ancsák - Júlia Ökrös', year: '2021' },
+  
+  // 2021 continued
+  { category: 'Junior Girls Formation', names: 'Party Girls', year: '2021' },
+  { category: 'Junior Couple Formation', names: 'Soldiers', year: '2022' },
+  { category: 'Main Class Contact Style', names: 'Ádám Király - Greta Mercz', year: '2022' },
+  
+  // 2022
+  { category: 'Main Class Formation', names: 'The Clue', year: '2022' },
+  { category: 'Junior Couple', names: 'Attila Ancsák - Júlia Ökrös', year: '2022' },
+  { category: 'Junior Girls Formation', names: 'Party Girls', year: '2022' },
+  
+  // 2022 continued
+  { category: 'Ladies Formation', names: 'Origo', year: '2022' },
+  { category: 'Main Class Free Style', names: 'Alex Deli - Luca Bihari', year: '2023' },
+  { category: 'Junior Couple Formation', names: 'Soldiers', year: '2023' },
+  
+  // 2024
+  { category: 'Junior Couple Formation', names: 'Rock It!', year: '2024' },
+  { category: 'Ladies Formation', names: 'The Szupergirls', year: '2024' },
 ];
 
 import { ref, onMounted, onUnmounted } from 'vue'

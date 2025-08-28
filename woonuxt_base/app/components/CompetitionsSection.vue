@@ -43,7 +43,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <section class="relative text-white competitions-section" ref="competitionsSection">
+  <section class="relative text-white competitions-section" ref="competitionsSection" id="COMPETITIONS">
     <!-- Background image -->
     <div class="absolute inset-0 bg-container">
       <NuxtImg 
