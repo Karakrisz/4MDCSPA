@@ -4,6 +4,14 @@ import { ref, onMounted, onUnmounted, nextTick } from 'vue';
 const heroVideo = ref(null);
 const videoLoaded = ref(false);
 const videoError = ref(false);
+const isMobile = ref(false);
+const userInteracted = ref(false);
+
+// Mobil eszköz detektálása
+const detectMobile = () => {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+    window.innerWidth <= 768;
+};
 
 // Videó dinamikus betöltése
 const loadVideo = async () => {
@@ -24,17 +32,21 @@ const loadVideo = async () => {
           break;
         }
       } catch (e) {
-        // Folytatjuk a következő útvonallal
         continue;
       }
     }
 
     if (videoPath) {
       // Ha megtaláltuk, betöltjük
-      const source = document.createElement('source');
-      source.src = videoPath;
-      source.type = 'video/mp4';
-      heroVideo.value.appendChild(source);
+      heroVideo.value.src = videoPath;
+      
+      // Mobil eszközökön más stratégia
+      if (isMobile.value) {
+        heroVideo.value.controls = false;
+        heroVideo.value.playsInline = true;
+        heroVideo.value.muted = true;
+        heroVideo.value.autoplay = false; // Mobil eszközökön kikapcsoljuk az autoplay-t
+      }
 
       // Betöltés indítása
       heroVideo.value.load();
@@ -44,7 +56,6 @@ const loadVideo = async () => {
     }
   } catch (error) {
     console.warn('Video not available, using fallback image:', error);
-    console.warn('Expected video locations:', ['public/video/slide_reel.mp4', 'public/video/silde_reel.mp4', 'public/assets/video/slide_reel.mp4']);
     videoError.value = true;
   }
 };
@@ -60,16 +71,46 @@ const onVideoLoaded = () => {
 const onVideoCanPlay = () => {
   if (heroVideo.value && !videoError.value) {
     videoLoaded.value = true;
-    heroVideo.value.play().catch((e) => {
-      console.warn('Video autoplay failed:', e);
-      videoError.value = true;
-    });
+    
+    // Desktop esetén próbáljuk az autoplay-t
+    if (!isMobile.value) {
+      heroVideo.value.play().catch((e) => {
+        console.warn('Video autoplay failed:', e);
+        videoError.value = true;
+      });
+    } else {
+      // Mobil esetén várjuk a user interakciót
+      setupMobileVideoInteraction();
+    }
   }
 };
 
-// Error handling - fallback képre vált
-const onVideoError = () => {
-  console.warn('Video loading failed, using fallback image');
+// Mobil videó interakció beállítása
+const setupMobileVideoInteraction = () => {
+  const playVideoOnInteraction = () => {
+    if (heroVideo.value && !userInteracted.value && videoLoaded.value) {
+      userInteracted.value = true;
+      heroVideo.value.play().catch((e) => {
+        console.warn('Mobile video play failed:', e);
+        videoError.value = true;
+      });
+      
+      // Event listener eltávolítása
+      document.removeEventListener('touchstart', playVideoOnInteraction);
+      document.removeEventListener('click', playVideoOnInteraction);
+      document.removeEventListener('scroll', playVideoOnInteraction);
+    }
+  };
+
+  // Különböző interakciókra várunk
+  document.addEventListener('touchstart', playVideoOnInteraction, { once: true, passive: true });
+  document.addEventListener('click', playVideoOnInteraction, { once: true });
+  document.addEventListener('scroll', playVideoOnInteraction, { once: true, passive: true });
+};
+
+// Error handling
+const onVideoError = (e) => {
+  console.warn('Video loading failed, using fallback image', e);
   videoError.value = true;
   videoLoaded.value = false;
 };
@@ -77,11 +118,20 @@ const onVideoError = () => {
 // Performance optimalizálás
 onMounted(async () => {
   await nextTick();
+  
+  // Mobil detektálás
+  isMobile.value = detectMobile();
+  
+  // Resize listener
+  const handleResize = () => {
+    isMobile.value = detectMobile();
+  };
+  window.addEventListener('resize', handleResize);
 
-  // Videó betöltése késleltetéssel (hogy ne blokkolja az oldalt)
+  // Videó betöltése késleltetéssel
   setTimeout(() => {
     loadVideo();
-  }, 500);
+  }, isMobile.value ? 1000 : 500); // Mobil eszközökön még hosszabb késleltetés
 
   // Intersection Observer a videó optimális lejátszásához
   if ('IntersectionObserver' in window && heroVideo.value) {
@@ -89,9 +139,12 @@ onMounted(async () => {
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting && heroVideo.value && videoLoaded.value) {
-            heroVideo.value.play().catch(() => {
-              videoError.value = true;
-            });
+            // Desktop esetén vagy ha már volt interakció
+            if (!isMobile.value || userInteracted.value) {
+              heroVideo.value.play().catch(() => {
+                videoError.value = true;
+              });
+            }
           } else if (heroVideo.value && videoLoaded.value) {
             heroVideo.value.pause();
           }
@@ -120,32 +173,36 @@ onUnmounted(() => {
     <video
       ref="heroVideo"
       class="absolute inset-0 object-cover w-full h-full pointer-events-none hero-video"
+      :class="{ 'mobile-video': isMobile }"
       muted
       loop
       playsinline
-      preload="none"
+      :preload="isMobile ? 'metadata' : 'auto'"
+      webkit-playsinline
       @loadeddata="onVideoLoaded"
       @error="onVideoError"
       @canplay="onVideoCanPlay">
-      <!-- Dinamikusan betöltjük a videót -->
     </video>
 
-    <!-- Fallback kép ha a videó nem tölt be vagy még betöltődik -->
+    <!-- Mobil videó play gomb (opcionális) -->
+    <div 
+      v-if="isMobile && videoLoaded && !userInteracted && !videoError"
+      class="absolute inset-0 flex items-center justify-center z-20 bg-black bg-opacity-30"
+      @click="setupMobileVideoInteraction">
+      <button class="video-play-btn">
+        <svg width="80" height="80" viewBox="0 0 24 24" fill="white">
+          <path d="M8 5v14l11-7z"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Fallback kép -->
     <NuxtImg
-      v-show="!videoLoaded"
+      v-show="!videoLoaded || videoError"
       src="/img/hero.svg"
       format="webp"
       class="absolute inset-0 object-cover w-full h-full pointer-events-none hero-bg"
       alt="Hero background" />
-
-    <!-- Backup/kommentezett képes háttér -->
-    <!-- 
-        <NuxtImg 
-            src="/img/hero.svg" 
-            format="webp" 
-            class="absolute inset-0 object-cover w-full h-full pointer-events-none hero-bg"
-        />
-        -->
 
     <!-- Overlay animációval -->
     <div class="absolute inset-0 overlay" style="background: #141414"></div>
@@ -172,8 +229,33 @@ onUnmounted(() => {
 <style scoped>
 /* Videó optimalizálás */
 .hero-video {
-  transform: scale(1.02); /* Kis zoom a fekete sávok elkerüléséhez */
-  will-change: transform; /* GPU gyorsítás */
+  transform: scale(1.02);
+  will-change: transform;
+}
+
+/* Mobil videó specifikus stílusok */
+.mobile-video {
+  transform: scale(1.1);
+  object-position: center center;
+}
+
+/* Video play button stílus */
+.video-play-btn {
+  background: rgba(0, 0, 0, 0.5);
+  border: 2px solid white;
+  border-radius: 50%;
+  width: 100px;
+  height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.video-play-btn:hover {
+  background: rgba(0, 0, 0, 0.7);
+  transform: scale(1.1);
 }
 
 /* Smooth videó betöltés */
@@ -188,14 +270,13 @@ onUnmounted(() => {
   }
 }
 
-/* Fallback animáció (ha nincs videó) */
+/* Fallback animáció */
 .hero-bg {
   animation: backgroundFloat 20s ease-in-out infinite;
 }
 
 @keyframes backgroundFloat {
-  0%,
-  100% {
+  0%, 100% {
     transform: scale(1) translateY(0px);
   }
   50% {
@@ -211,28 +292,25 @@ onUnmounted(() => {
 
 @keyframes fadeInOverlay {
   to {
-    opacity: 0.4; /* Kicsit átlátszóbb a videó miatt */
+    opacity: 0.4;
   }
 }
 
-/* Welcome szöveg animáció */
+/* Szöveg animációk */
 .welcome-text {
   animation: slideInFromTop 1s ease-out 1s forwards;
 }
 
-/* Fő cím animáció */
 .main-title {
   animation: slideInScale 1.2s ease-out 1.4s forwards;
   transform: translateY(30px) scale(0.9);
 }
 
-/* Alcím animáció */
 .subtitle {
   animation: slideInFromBottom 1s ease-out 1.8s forwards;
   transform: translateY(50px);
 }
 
-/* Logó animáció */
 .logo {
   animation: bounceInLogo 1.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) 2.2s forwards;
   transform: translateX(-50%) translateY(50px) scale(0.5);
@@ -283,7 +361,7 @@ onUnmounted(() => {
   }
 }
 
-/* Hover effekt a szövegekre */
+/* Hover effektek */
 .welcome-text:hover {
   animation: textGlow 0.3s ease-in-out;
 }
@@ -297,8 +375,7 @@ onUnmounted(() => {
 }
 
 @keyframes textGlow {
-  0%,
-  100% {
+  0%, 100% {
     text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
   }
   50% {
@@ -307,8 +384,7 @@ onUnmounted(() => {
 }
 
 @keyframes titlePulse {
-  0%,
-  100% {
+  0%, 100% {
     transform: scale(1);
   }
   50% {
@@ -317,8 +393,7 @@ onUnmounted(() => {
 }
 
 @keyframes subtitleShake {
-  0%,
-  100% {
+  0%, 100% {
     transform: translateX(0);
   }
   25% {
@@ -329,13 +404,12 @@ onUnmounted(() => {
   }
 }
 
-/* PWA optimalizálások */
+/* Mobil optimalizálások */
 @media (max-width: 768px) {
   .hero-video {
-    transform: scale(1.1); /* Mobil eszközökön nagyobb zoom */
+    transform: scale(1.15);
   }
 
-  /* Gyorsabb animációk mobilon */
   .main-title {
     animation-delay: 1.2s;
   }
@@ -349,7 +423,7 @@ onUnmounted(() => {
   }
 }
 
-/* Alacsony sávszélességnél videó kikapcsolása */
+/* Nagyon alacsony sávszélesség */
 @media (max-width: 480px) and (max-resolution: 1dppx) {
   .hero-video {
     display: none;
@@ -360,7 +434,7 @@ onUnmounted(() => {
   }
 }
 
-/* Prefers-reduced-motion támogatás */
+/* Reduced motion támogatás */
 @media (prefers-reduced-motion: reduce) {
   .hero-video,
   .hero-bg,
@@ -386,7 +460,7 @@ onUnmounted(() => {
   }
 }
 
-/* Dark mode támogatás */
+/* Dark mode */
 @media (prefers-color-scheme: dark) {
   .overlay {
     background: #0a0a0a;
@@ -396,7 +470,7 @@ onUnmounted(() => {
 /* További finomhangolások */
 .main-title {
   letter-spacing: 2px;
-  text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.8); /* Erősebb árnyék videó miatt */
+  text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.8);
 }
 
 .subtitle {
@@ -419,7 +493,7 @@ onUnmounted(() => {
 
 /* Performance hints */
 .hero-video {
-  transform: translateZ(0); /* Hardware acceleration */
+  transform: translateZ(0);
   backface-visibility: hidden;
 }
 </style>
