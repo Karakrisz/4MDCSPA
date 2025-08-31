@@ -4,9 +4,9 @@
     <!-- <Discounts /> -->
     <AboutSection />
     <OurwordSection />
+    <GoogleMapSection />
     <TeamSection />
     <CompetitionsSection />
-    <GoogleMapSection />
   </main>
 </template>
 

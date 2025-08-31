@@ -47,11 +47,90 @@ const champions = [
   { category: 'Ladies Formation', names: 'The Szupergirls', year: '2024' },
 ];
 
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, nextTick } from 'vue'
 
 const championsSection = ref(null)
+const backgroundVideo = ref(null)
+const videoLoaded = ref(false)
+const videoError = ref(false)
 
-onMounted(() => {
+// Videó dinamikus betöltése (az első komponens alapján)
+const loadVideo = async () => {
+  if (!backgroundVideo.value) return;
+
+  try {
+    // Különböző elérési utak kipróbálása
+    const videoPaths = ['/video/ourword_reel.mp4'];
+
+    let videoPath = null;
+
+    // Próbáljuk meg megtalálni a videót
+    for (const path of videoPaths) {
+      try {
+        const response = await fetch(path, { method: 'HEAD' });
+        if (response.ok) {
+          videoPath = path;
+          break;
+        }
+      } catch (e) {
+        // Folytatjuk a következő útvonallal
+        continue;
+      }
+    }
+
+    if (videoPath) {
+      // Ha megtaláltuk, betöltjük
+      const source = document.createElement('source');
+      source.src = videoPath;
+      source.type = 'video/mp4';
+      backgroundVideo.value.appendChild(source);
+
+      // Betöltés indítása
+      backgroundVideo.value.load();
+      console.log(`Background video loaded from: ${videoPath}`);
+    } else {
+      throw new Error('Background video file not found');
+    }
+  } catch (error) {
+    console.warn('Background video not available, using fallback image:', error);
+    videoError.value = true;
+  }
+};
+
+// Videó 11 másodpercnél kezdése
+const onVideoLoaded = () => {
+  if (backgroundVideo.value && !videoError.value) {
+    backgroundVideo.value.currentTime = 11;
+  }
+};
+
+// Videó készen áll a lejátszásra
+const onVideoCanPlay = () => {
+  if (backgroundVideo.value && !videoError.value) {
+    videoLoaded.value = true;
+    backgroundVideo.value.play().catch((e) => {
+      console.warn('Background video autoplay failed:', e);
+      videoError.value = true;
+    });
+  }
+};
+
+// Error handling - fallback képre vált
+const onVideoError = () => {
+  console.warn('Background video loading failed, using fallback image');
+  videoError.value = true;
+  videoLoaded.value = false;
+};
+
+onMounted(async () => {
+  await nextTick();
+
+  // Videó betöltése késleltetéssel
+  setTimeout(() => {
+    loadVideo();
+  }, 500);
+
+  // Intersection Observer a kártyák animációjához
   const observer = new IntersectionObserver(
     (entries) => {
       entries.forEach((entry) => {
@@ -79,20 +158,68 @@ onMounted(() => {
     observer.observe(el)
   })
 
+  // Videó intersection observer
+  if ('IntersectionObserver' in window && backgroundVideo.value) {
+    const videoObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting && backgroundVideo.value && videoLoaded.value) {
+            backgroundVideo.value.play().catch(() => {
+              videoError.value = true;
+            });
+          } else if (backgroundVideo.value && videoLoaded.value) {
+            backgroundVideo.value.pause();
+          }
+        });
+      },
+      { threshold: 0.25 },
+    );
+
+    videoObserver.observe(backgroundVideo.value);
+  }
+
   onUnmounted(() => {
     observer.disconnect()
+    
+    // Videó cleanup
+    if (backgroundVideo.value) {
+      backgroundVideo.value.pause();
+      backgroundVideo.value.removeAttribute('src');
+      backgroundVideo.value.load();
+    }
   })
 })
 </script>
 
 <template>
   <section class="relative text-white pt-16" ref="championsSection" id="champions">
-    <!-- Background Image & Overlay -->
+    <!-- Background Video & Overlay -->
     <div class="absolute inset-0 bg-container">
-      <NuxtImg src="/img/word.webp" alt="Champions background" class="w-full h-full object-cover bg-image" />
-      <div class="absolute inset-0 bg-black opacity-75 overlay-1"></div>
+      <!-- Videós háttér -->
+      <video
+        ref="backgroundVideo"
+        class="absolute inset-0 object-cover w-full h-full pointer-events-none background-video"
+        muted
+        loop
+        playsinline
+        preload="none"
+        @loadeddata="onVideoLoaded"
+        @error="onVideoError"
+        @canplay="onVideoCanPlay">
+        <!-- Dinamikusan betöltjük a videót -->
+      </video>
+
+      <!-- Fallback kép ha a videó nem tölt be vagy még betöltődik -->
+      <NuxtImg 
+        v-show="!videoLoaded" 
+        src="/img/word.webp" 
+        alt="Champions background" 
+        class="w-full h-full object-cover bg-image" 
+      />
+      
+      <div class="absolute inset-0 bg-black opacity-40 overlay-1"></div>
     </div>
-    <div class="absolute inset-0 overlay-2" style="opacity: 0.6; background: #141414;"></div>
+    <div class="absolute inset-0 overlay-2" style="opacity: 0.3; background: #141414;"></div>
 
     <!-- Main Content -->
     <div class="relative container mx-auto px-4">
@@ -112,7 +239,7 @@ onMounted(() => {
         <div 
           v-for="(item, index) in champions" 
           :key="index" 
-          class="bg-white text-[#242424] rounded-lg shadow-lg flex flex-col pt-8 px-8 min-h-[200px] relative champion-card opacity-0" 
+          class="bg-white/20 backdrop-blur-sm border border-white/30 text-white rounded-lg shadow-lg flex flex-col pt-8 px-8 min-h-[200px] relative champion-card opacity-0" 
           :class="{ 'lg:col-start-2': index === champions.length - 2, 'lg:col-start-3': index === champions.length - 1 }"
         >
           <div class="text-center flex-grow">
@@ -142,9 +269,9 @@ onMounted(() => {
             Explore our<br />Training Programs
           </h3>
           <div class="inline-flex items-center mt-6">
-            <button class="bg-[#FE2AF7] text-[16px] text-black uppercase font-bold py-4 px-20 shadow-lg cta-button opacity-0">
+            <!-- <button class="bg-[#FE2AF7] text-[16px] text-black uppercase font-bold py-4 px-20 shadow-lg cta-button opacity-0">
               Coming Soon
-            </button>
+            </button> -->
           </div>
         </div>
       </div>
@@ -153,6 +280,26 @@ onMounted(() => {
 </template>
 
 <style scoped>
+/* Videó optimalizálás (hero komponensből átvéve) */
+.background-video {
+  transform: scale(1.02); /* Kis zoom a fekete sávok elkerüléséhez */
+  will-change: transform; /* GPU gyorsítás */
+  transform: translateZ(0); /* Hardware acceleration */
+  backface-visibility: hidden;
+}
+
+/* Smooth videó betöltés */
+.background-video {
+  opacity: 0;
+  animation: fadeInVideo 1s ease-out 0.2s forwards;
+}
+
+@keyframes fadeInVideo {
+  to {
+    opacity: 1;
+  }
+}
+
 /* Háttér animációk */
 .bg-container {
   overflow: hidden;
@@ -177,8 +324,8 @@ onMounted(() => {
 }
 
 @keyframes overlayPulse {
-  0%, 100% { opacity: 0.75; }
-  50% { opacity: 0.65; }
+  0%, 100% { opacity: 0.40; }
+  50% { opacity: 0.30; }
 }
 
 /* Heading animációk */
@@ -235,33 +382,46 @@ onMounted(() => {
 /* Kártya hover effektek */
 .champion-card:hover {
   transform: translateY(-10px) scale(1.02);
-  box-shadow: 0 20px 40px rgba(254, 42, 247, 0.3);
+  box-shadow: 0 20px 40px rgba(254, 42, 247, 0.4);
+  background: rgba(255, 255, 255, 0.35);
+  backdrop-filter: blur(12px);
+  border-color: rgba(254, 42, 247, 0.6);
   transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 .champion-card:hover .card-year {
   color: #FE2AF7;
-  text-shadow: 0 0 20px rgba(254, 42, 247, 0.6);
+  text-shadow: 0 0 20px rgba(254, 42, 247, 0.8);
   transition: all 0.3s ease;
 }
 
 .champion-card:hover .card-title {
   color: #00BCD4;
+  text-shadow: 0 2px 8px rgba(0, 188, 212, 0.6);
+  transition: all 0.3s ease;
+}
+
+.champion-card:hover .card-names {
+  color: rgba(255, 255, 255, 0.95);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
   transition: all 0.3s ease;
 }
 
 /* Kártya tartalom animációk */
 .card-title {
   transition: all 0.3s ease;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
 }
 
 .card-names {
   transition: all 0.3s ease;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
 }
 
 .card-year {
   transition: all 0.3s ease;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+  text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.8);
+  color: rgba(255, 255, 255, 0.9);
 }
 
 /* CTA szekció animációk */
@@ -319,6 +479,10 @@ onMounted(() => {
   .champion-card.animate-in {
     transform: translateY(0);
   }
+
+  .background-video {
+    transform: scale(1.1); /* Mobil eszközökön nagyobb zoom */
+  }
 }
 
 @media (max-width: 640px) {
@@ -331,8 +495,20 @@ onMounted(() => {
   }
 }
 
+/* Alacsony sávszélességnél videó kikapcsolása */
+@media (max-width: 480px) and (max-resolution: 1dppx) {
+  .background-video {
+    display: none;
+  }
+
+  .bg-image {
+    display: block !important;
+  }
+}
+
 /* Accessibility - prefers-reduced-motion */
 @media (prefers-reduced-motion: reduce) {
+  .background-video,
   .bg-image,
   .overlay-1 {
     animation: none;
@@ -354,6 +530,10 @@ onMounted(() => {
   
   .cta-button::before {
     display: none;
+  }
+
+  .background-video {
+    transform: scale(1.02);
   }
 }
 
@@ -389,9 +569,10 @@ onMounted(() => {
 
 /* Loading state animáció */
 .champion-card:not(.animate-in) {
-  background: linear-gradient(90deg, #f0f0f0, #e0e0e0, #f0f0f0);
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1));
   background-size: 200% 100%;
   animation: shimmerLoading 1.5s infinite;
+  backdrop-filter: blur(4px);
 }
 
 @keyframes shimmerLoading {
@@ -404,7 +585,8 @@ onMounted(() => {
 }
 
 .champion-card.animate-in {
-  background: white;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(8px);
   animation: none;
 }
 </style>

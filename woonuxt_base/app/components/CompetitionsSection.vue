@@ -1,12 +1,35 @@
 <script setup>
+// Az aktuális események - csak az első 3 megjelenítése a főoldalon
 const competitions = [
-  { title: 'International Competition', location: 'Soroksár Sports Hall', date: 'Sat, 13 Dec' },
-  { title: 'International Competition', location: 'Soroksár Sports Hall', date: 'Sat, 13 Dec' },
+  { 
+    title: 'Grand Opening - First Open Training', 
+    location: 'Dubai, UAE', 
+    date: 'Fri, 30 Aug',
+    type: 'Grand Opening'
+  },
+  { 
+    title: 'GEMS FirstPoint School - Sign-up day', 
+    location: 'GEMS FirstPoint School', 
+    date: 'Sun, 1 Sept',
+    type: 'Sign-up'
+  },
+  { 
+    title: 'Raffles World Academy - First AACA training', 
+    location: 'Raffles World Academy', 
+    date: 'Sun, 8 Sept',
+    type: 'Training'
+  }
 ];
 
 import { ref, onMounted, onUnmounted } from 'vue'
 
 const competitionsSection = ref(null)
+
+// Router navigáció a teljes lista oldalra
+const navigateToAllEvents = () => {
+  // Itt a router push-t használnád: $router.push('/competitions')
+  console.log('Navigate to all competitions page')
+}
 
 onMounted(() => {
   const observer = new IntersectionObserver(
@@ -57,7 +80,7 @@ onMounted(() => {
     <div class="relative container mx-auto px-4 py-24 flex flex-col items-center">
       <!-- Title -->
       <h2 class="text-[24px] lg:text-[64px] font-extrabold font-unbounded uppercase mb-5 text-center text-white competitions-title opacity-0">
-        Join the Competitions
+        Upcoming Events
       </h2>
 
       <!-- Competitions Box -->
@@ -68,9 +91,11 @@ onMounted(() => {
           class="flex items-center py-4 border-b last:border-0 competition-item opacity-0"
         >
           <div class="w-20 h-20 bg-gray-200 rounded mr-6 flex-shrink-0 competition-icon">
-            <!-- Animated icon placeholder -->
+            <!-- Event type based icon -->
             <div class="w-full h-full rounded bg-gradient-to-br from-gray-300 to-gray-400 flex items-center justify-center icon-content">
-              <div class="w-8 h-8 border-4 border-[#242424] rounded-full animate-pulse"></div>
+              <div v-if="comp.type === 'Grand Opening'" class="w-8 h-8 border-4 border-[#00BCD4] rounded-full animate-pulse"></div>
+              <div v-else-if="comp.type === 'Sign-up'" class="w-6 h-6 bg-[#FE2AF7] rounded"></div>
+              <div v-else class="w-8 h-8 border-4 border-[#242424] rounded-full animate-pulse"></div>
             </div>
           </div>
           <div class="competition-details">
@@ -88,18 +113,15 @@ onMounted(() => {
 
         <!-- Show All Button -->
         <div class="mt-8 text-center">
-          <button class="bg-[#242424] text-white text-[16px] uppercase font-bold py-4 px-20 shadow-lg show-all-button opacity-0">
-            Show All
-          </button>
+          <NuxtLink to="/all-events"
+            class="bg-[#242424] text-white text-[16px] uppercase font-bold py-4 px-20 shadow-lg show-all-button opacity-0 hover:bg-gradient-to-r hover:from-[#00BCD4] hover:to-[#FE2AF7] transition-all duration-300"
+          >
+            Show All Events
+          </NuxtLink>
         </div>
       </div>
     </div>
   </section>
-  <NuxtImg 
-        src="/img/about.webp" 
-        alt="Competitions background" 
-        class="w-full h-full object-cover" 
-      />
 </template>
 
 <style scoped>
@@ -338,7 +360,6 @@ onMounted(() => {
 
 .show-all-button:hover {
   transform: translateY(-5px) scale(1.05);
-  background: linear-gradient(45deg, #242424, #00BCD4);
   box-shadow: 0 15px 30px rgba(36, 36, 36, 0.4);
   transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
