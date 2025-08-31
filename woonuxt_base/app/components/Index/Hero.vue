@@ -5,7 +5,6 @@ const heroVideo = ref(null);
 const videoLoaded = ref(false);
 const videoError = ref(false);
 const isMobile = ref(false);
-const userInteracted = ref(false);
 
 // Mobil eszköz detektálása
 const detectMobile = () => {
@@ -13,17 +12,65 @@ const detectMobile = () => {
     window.innerWidth <= 768;
 };
 
+// Agresszív autoplay próbálkozások
+const forceAutoplay = async (video) => {
+  const playPromises = [];
+  
+  // 1. Alapvető play próbálkozás
+  playPromises.push(
+    video.play().catch(e => {
+      console.log('Basic autoplay failed:', e.message);
+      return null;
+    })
+  );
+
+  // 2. Késleltetett próbálkozás
+  playPromises.push(
+    new Promise(resolve => {
+      setTimeout(() => {
+        video.play().then(resolve).catch(() => resolve(null));
+      }, 100);
+    })
+  );
+
+  // 3. Volume = 0 próbálkozás (ha muted nem működik)
+  if (!video.muted) {
+    video.volume = 0;
+    playPromises.push(
+      video.play().catch(() => null)
+    );
+  }
+
+  // 4. User gesture szimuláció
+  playPromises.push(
+    new Promise(resolve => {
+      const tryPlay = () => {
+        video.play().then(resolve).catch(() => resolve(null));
+        document.removeEventListener('touchstart', tryPlay);
+        document.removeEventListener('touchend', tryPlay);
+        document.removeEventListener('click', tryPlay);
+      };
+      
+      document.addEventListener('touchstart', tryPlay, { once: true, passive: true });
+      document.addEventListener('touchend', tryPlay, { once: true, passive: true });
+      document.addEventListener('click', tryPlay, { once: true });
+      
+      // Timeout after 2 seconds
+      setTimeout(() => resolve(null), 2000);
+    })
+  );
+
+  return Promise.race(playPromises);
+};
+
 // Videó dinamikus betöltése
 const loadVideo = async () => {
   if (!heroVideo.value) return;
 
   try {
-    // Különböző elérési utak kipróbálása
     const videoPaths = ['/video/slide_reel.mp4'];
-
     let videoPath = null;
 
-    // Próbáljuk meg megtalálni a videót
     for (const path of videoPaths) {
       try {
         const response = await fetch(path, { method: 'HEAD' });
@@ -37,18 +84,21 @@ const loadVideo = async () => {
     }
 
     if (videoPath) {
-      // Ha megtaláltuk, betöltjük
       heroVideo.value.src = videoPath;
       
-      // Mobil eszközökön más stratégia
+      // Agresszív mobil beállítások
       if (isMobile.value) {
-        heroVideo.value.controls = false;
-        heroVideo.value.playsInline = true;
+        heroVideo.value.setAttribute('playsinline', '');
+        heroVideo.value.setAttribute('webkit-playsinline', '');
+        heroVideo.value.setAttribute('x-webkit-airplay', 'allow');
         heroVideo.value.muted = true;
-        heroVideo.value.autoplay = false; // Mobil eszközökön kikapcsoljuk az autoplay-t
+        heroVideo.value.volume = 0;
+        heroVideo.value.defaultMuted = true;
+        heroVideo.value.controls = false;
+        heroVideo.value.disablePictureInPicture = true;
+        heroVideo.value.setAttribute('disableRemotePlayback', '');
       }
 
-      // Betöltés indítása
       heroVideo.value.load();
       console.log(`Video loaded from: ${videoPath}`);
     } else {
@@ -60,52 +110,49 @@ const loadVideo = async () => {
   }
 };
 
-// Videó 8 másodpercnél kezdése
+// Videó betöltődött
 const onVideoLoaded = () => {
   if (heroVideo.value && !videoError.value) {
     heroVideo.value.currentTime = 8;
   }
 };
 
-// Videó készen áll a lejátszásra
-const onVideoCanPlay = () => {
+// Videó készen áll
+const onVideoCanPlay = async () => {
   if (heroVideo.value && !videoError.value) {
     videoLoaded.value = true;
     
-    // Desktop esetén próbáljuk az autoplay-t
-    if (!isMobile.value) {
-      heroVideo.value.play().catch((e) => {
-        console.warn('Video autoplay failed:', e);
-        videoError.value = true;
-      });
-    } else {
-      // Mobil esetén várjuk a user interakciót
-      setupMobileVideoInteraction();
+    try {
+      // Agresszív autoplay kísérlet
+      await forceAutoplay(heroVideo.value);
+      console.log('Video autoplay successful');
+    } catch (e) {
+      console.warn('All autoplay attempts failed:', e);
+      // Itt sem adunk fel, próbálkozunk tovább
+      continuousPlayAttempts();
     }
   }
 };
 
-// Mobil videó interakció beállítása
-const setupMobileVideoInteraction = () => {
-  const playVideoOnInteraction = () => {
-    if (heroVideo.value && !userInteracted.value && videoLoaded.value) {
-      userInteracted.value = true;
-      heroVideo.value.play().catch((e) => {
-        console.warn('Mobile video play failed:', e);
-        videoError.value = true;
+// Folyamatos lejátszási kísérletek
+const continuousPlayAttempts = () => {
+  let attempts = 0;
+  const maxAttempts = 20;
+  
+  const tryPlay = () => {
+    if (attempts >= maxAttempts || !heroVideo.value || videoError.value) return;
+    
+    attempts++;
+    heroVideo.value.play()
+      .then(() => {
+        console.log(`Video started after ${attempts} attempts`);
+      })
+      .catch(() => {
+        setTimeout(tryPlay, 500); // Próbálkozás 500ms múlva
       });
-      
-      // Event listener eltávolítása
-      document.removeEventListener('touchstart', playVideoOnInteraction);
-      document.removeEventListener('click', playVideoOnInteraction);
-      document.removeEventListener('scroll', playVideoOnInteraction);
-    }
   };
-
-  // Különböző interakciókra várunk
-  document.addEventListener('touchstart', playVideoOnInteraction, { once: true, passive: true });
-  document.addEventListener('click', playVideoOnInteraction, { once: true });
-  document.addEventListener('scroll', playVideoOnInteraction, { once: true, passive: true });
+  
+  tryPlay();
 };
 
 // Error handling
@@ -115,11 +162,9 @@ const onVideoError = (e) => {
   videoLoaded.value = false;
 };
 
-// Performance optimalizálás
 onMounted(async () => {
   await nextTick();
   
-  // Mobil detektálás
   isMobile.value = detectMobile();
   
   // Resize listener
@@ -128,33 +173,45 @@ onMounted(async () => {
   };
   window.addEventListener('resize', handleResize);
 
-  // Videó betöltése késleltetéssel
+  // Videó betöltése rövidebb késleltetéssel
   setTimeout(() => {
     loadVideo();
-  }, isMobile.value ? 1000 : 500); // Mobil eszközökön még hosszabb késleltetés
+  }, 200);
 
-  // Intersection Observer a videó optimális lejátszásához
+  // Intersection Observer
   if ('IntersectionObserver' in window && heroVideo.value) {
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting && heroVideo.value && videoLoaded.value) {
-            // Desktop esetén vagy ha már volt interakció
-            if (!isMobile.value || userInteracted.value) {
-              heroVideo.value.play().catch(() => {
-                videoError.value = true;
-              });
-            }
+            // Mindig próbálkozunk a lejátszással
+            heroVideo.value.play().catch(() => {
+              // Ha nem megy, folyamatos próbálkozás
+              continuousPlayAttempts();
+            });
           } else if (heroVideo.value && videoLoaded.value) {
             heroVideo.value.pause();
           }
         });
       },
-      { threshold: 0.25 },
+      { threshold: 0.1 }, // Alacsonyabb threshold
     );
 
     observer.observe(heroVideo.value);
   }
+
+  // Dokumentum interakciók figyelése (háttérben)
+  const enableVideoOnInteraction = () => {
+    if (heroVideo.value && videoLoaded.value && heroVideo.value.paused) {
+      heroVideo.value.play().catch(() => {});
+    }
+  };
+
+  // Passzív event listener-ek (nem akadályozzák a scroll-t)
+  document.addEventListener('touchstart', enableVideoOnInteraction, { passive: true });
+  document.addEventListener('touchend', enableVideoOnInteraction, { passive: true });
+  document.addEventListener('scroll', enableVideoOnInteraction, { passive: true });
+  document.addEventListener('click', enableVideoOnInteraction, { passive: true });
 });
 
 // Cleanup
@@ -177,24 +234,16 @@ onUnmounted(() => {
       muted
       loop
       playsinline
-      :preload="isMobile ? 'metadata' : 'auto'"
       webkit-playsinline
+      autoplay
+      :preload="isMobile ? 'auto' : 'auto'"
+      disablePictureInPicture
+      x-webkit-airplay="allow"
       @loadeddata="onVideoLoaded"
       @error="onVideoError"
-      @canplay="onVideoCanPlay">
+      @canplay="onVideoCanPlay"
+      @loadedmetadata="onVideoCanPlay">
     </video>
-
-    <!-- Mobil videó play gomb (opcionális) -->
-    <div 
-      v-if="isMobile && videoLoaded && !userInteracted && !videoError"
-      class="absolute inset-0 flex items-center justify-center z-20 bg-black bg-opacity-30"
-      @click="setupMobileVideoInteraction">
-      <button class="video-play-btn">
-        <svg width="80" height="80" viewBox="0 0 24 24" fill="white">
-          <path d="M8 5v14l11-7z"/>
-        </svg>
-      </button>
-    </div>
 
     <!-- Fallback kép -->
     <NuxtImg
@@ -231,31 +280,14 @@ onUnmounted(() => {
 .hero-video {
   transform: scale(1.02);
   will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 
 /* Mobil videó specifikus stílusok */
 .mobile-video {
   transform: scale(1.1);
   object-position: center center;
-}
-
-/* Video play button stílus */
-.video-play-btn {
-  background: rgba(0, 0, 0, 0.5);
-  border: 2px solid white;
-  border-radius: 50%;
-  width: 100px;
-  height: 100px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.video-play-btn:hover {
-  background: rgba(0, 0, 0, 0.7);
-  transform: scale(1.1);
 }
 
 /* Smooth videó betöltés */
@@ -423,8 +455,8 @@ onUnmounted(() => {
   }
 }
 
-/* Nagyon alacsony sávszélesség */
-@media (max-width: 480px) and (max-resolution: 1dppx) {
+/* Alacsony sávszélesség - csak nagyon régi eszközökön */
+@media (max-width: 360px) and (max-resolution: 1dppx) {
   .hero-video {
     display: none;
   }

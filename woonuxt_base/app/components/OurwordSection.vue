@@ -53,8 +53,16 @@ const championsSection = ref(null)
 const backgroundVideo = ref(null)
 const videoLoaded = ref(false)
 const videoError = ref(false)
+const isMobile = ref(false)
+const userInteracted = ref(false)
 
-// Videó dinamikus betöltése (az első komponens alapján)
+// Mobil eszköz detektálása
+const detectMobile = () => {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+    window.innerWidth <= 768;
+};
+
+// Videó dinamikus betöltése
 const loadVideo = async () => {
   if (!backgroundVideo.value) return;
 
@@ -73,17 +81,21 @@ const loadVideo = async () => {
           break;
         }
       } catch (e) {
-        // Folytatjuk a következő útvonallal
         continue;
       }
     }
 
     if (videoPath) {
       // Ha megtaláltuk, betöltjük
-      const source = document.createElement('source');
-      source.src = videoPath;
-      source.type = 'video/mp4';
-      backgroundVideo.value.appendChild(source);
+      backgroundVideo.value.src = videoPath;
+      
+      // Mobil eszközökön más stratégia
+      if (isMobile.value) {
+        backgroundVideo.value.controls = false;
+        backgroundVideo.value.playsInline = true;
+        backgroundVideo.value.muted = true;
+        backgroundVideo.value.autoplay = false;
+      }
 
       // Betöltés indítása
       backgroundVideo.value.load();
@@ -108,27 +120,66 @@ const onVideoLoaded = () => {
 const onVideoCanPlay = () => {
   if (backgroundVideo.value && !videoError.value) {
     videoLoaded.value = true;
-    backgroundVideo.value.play().catch((e) => {
-      console.warn('Background video autoplay failed:', e);
-      videoError.value = true;
-    });
+    
+    // Desktop esetén próbáljuk az autoplay-t
+    if (!isMobile.value) {
+      backgroundVideo.value.play().catch((e) => {
+        console.warn('Background video autoplay failed:', e);
+        videoError.value = true;
+      });
+    } else {
+      // Mobil esetén várjuk a user interakciót
+      setupMobileVideoInteraction();
+    }
   }
 };
 
-// Error handling - fallback képre vált
-const onVideoError = () => {
-  console.warn('Background video loading failed, using fallback image');
+// Mobil videó interakció beállítása
+const setupMobileVideoInteraction = () => {
+  const playVideoOnInteraction = () => {
+    if (backgroundVideo.value && !userInteracted.value && videoLoaded.value) {
+      userInteracted.value = true;
+      backgroundVideo.value.play().catch((e) => {
+        console.warn('Mobile background video play failed:', e);
+        videoError.value = true;
+      });
+      
+      // Event listener eltávolítása
+      document.removeEventListener('touchstart', playVideoOnInteraction);
+      document.removeEventListener('click', playVideoOnInteraction);
+      document.removeEventListener('scroll', playVideoOnInteraction);
+    }
+  };
+
+  // Különböző interakciókra várunk
+  document.addEventListener('touchstart', playVideoOnInteraction, { once: true, passive: true });
+  document.addEventListener('click', playVideoOnInteraction, { once: true });
+  document.addEventListener('scroll', playVideoOnInteraction, { once: true, passive: true });
+};
+
+// Error handling
+const onVideoError = (e) => {
+  console.warn('Background video loading failed, using fallback image', e);
   videoError.value = true;
   videoLoaded.value = false;
 };
 
 onMounted(async () => {
   await nextTick();
+  
+  // Mobil detektálás
+  isMobile.value = detectMobile();
+  
+  // Resize listener
+  const handleResize = () => {
+    isMobile.value = detectMobile();
+  };
+  window.addEventListener('resize', handleResize);
 
   // Videó betöltése késleltetéssel
   setTimeout(() => {
     loadVideo();
-  }, 500);
+  }, isMobile.value ? 1000 : 500);
 
   // Intersection Observer a kártyák animációjához
   const observer = new IntersectionObserver(
@@ -164,9 +215,12 @@ onMounted(async () => {
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting && backgroundVideo.value && videoLoaded.value) {
-            backgroundVideo.value.play().catch(() => {
-              videoError.value = true;
-            });
+            // Desktop esetén vagy ha már volt interakció
+            if (!isMobile.value || userInteracted.value) {
+              backgroundVideo.value.play().catch(() => {
+                videoError.value = true;
+              });
+            }
           } else if (backgroundVideo.value && videoLoaded.value) {
             backgroundVideo.value.pause();
           }
@@ -199,19 +253,33 @@ onMounted(async () => {
       <video
         ref="backgroundVideo"
         class="absolute inset-0 object-cover w-full h-full pointer-events-none background-video"
+        :class="{ 'mobile-video': isMobile }"
         muted
         loop
         playsinline
-        preload="none"
+        :preload="isMobile ? 'metadata' : 'auto'"
+        webkit-playsinline
         @loadeddata="onVideoLoaded"
         @error="onVideoError"
         @canplay="onVideoCanPlay">
-        <!-- Dinamikusan betöltjük a videót -->
       </video>
+
+      <!-- Mobil videó play overlay (opcionális) -->
+      <div 
+        v-if="isMobile && videoLoaded && !userInteracted && !videoError"
+        class="absolute inset-0 flex items-center justify-center z-20 bg-black bg-opacity-20"
+        @click="setupMobileVideoInteraction">
+        <div class="video-play-hint">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="white" opacity="0.7">
+            <path d="M8 5v14l11-7z"/>
+          </svg>
+          <p class="text-xs mt-2 opacity-70">Tap to play video</p>
+        </div>
+      </div>
 
       <!-- Fallback kép ha a videó nem tölt be vagy még betöltődik -->
       <NuxtImg 
-        v-show="!videoLoaded" 
+        v-show="!videoLoaded || videoError" 
         src="/img/word.webp" 
         alt="Champions background" 
         class="w-full h-full object-cover bg-image" 
@@ -280,12 +348,36 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-/* Videó optimalizálás (hero komponensből átvéve) */
+/* Videó optimalizálás */
 .background-video {
-  transform: scale(1.02); /* Kis zoom a fekete sávok elkerüléséhez */
-  will-change: transform; /* GPU gyorsítás */
-  transform: translateZ(0); /* Hardware acceleration */
+  transform: scale(1.02);
+  will-change: transform;
+  transform: translateZ(0);
   backface-visibility: hidden;
+}
+
+/* Mobil videó specifikus stílusok */
+.mobile-video {
+  transform: scale(1.15);
+  object-position: center center;
+}
+
+/* Videó play hint stílus */
+.video-play-hint {
+  text-align: center;
+  pointer-events: none;
+  animation: pulseHint 2s ease-in-out infinite;
+}
+
+@keyframes pulseHint {
+  0%, 100% {
+    opacity: 0.7;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
 }
 
 /* Smooth videó betöltés */
@@ -470,7 +562,7 @@ onMounted(async () => {
   left: 100%;
 }
 
-/* Grid responsive animációk */
+/* Mobil optimalizálások */
 @media (max-width: 1024px) {
   .champion-card {
     transform: translateY(40px);
@@ -481,7 +573,7 @@ onMounted(async () => {
   }
 
   .background-video {
-    transform: scale(1.1); /* Mobil eszközökön nagyobb zoom */
+    transform: scale(1.1);
   }
 }
 
@@ -492,6 +584,10 @@ onMounted(async () => {
   
   .champion-card.animate-in {
     transform: translateY(0) scale(1);
+  }
+
+  .mobile-video {
+    transform: scale(1.2);
   }
 }
 
@@ -510,7 +606,8 @@ onMounted(async () => {
 @media (prefers-reduced-motion: reduce) {
   .background-video,
   .bg-image,
-  .overlay-1 {
+  .overlay-1,
+  .video-play-hint {
     animation: none;
   }
   
@@ -533,6 +630,10 @@ onMounted(async () => {
   }
 
   .background-video {
+    transform: scale(1.02);
+  }
+
+  .mobile-video {
     transform: scale(1.02);
   }
 }
