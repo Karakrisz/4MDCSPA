@@ -283,7 +283,7 @@ const addMarkers = () => {
 
     const marker = L.marker(location.coordinates, { icon }).addTo(map.value).bindPopup(`
         <div class="p-4 min-w-[250px] bg-gray-900 rounded-lg border border-gray-700">
-          <h3 class="font-bold text-white mb-2 text-lg">${location.name}</h3>
+          <h3 class="font-bold  mb-2 text-lg">${location.name}</h3>
           <p class="text-sm text-gray-400 mb-3">${location.address}</p>
           <div class="flex gap-2 mb-3">
             <span class="px-3 py-1 rounded-full text-xs font-bold text-white shadow-lg ${

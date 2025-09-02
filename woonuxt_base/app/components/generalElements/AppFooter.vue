@@ -9,13 +9,13 @@
 
         <!-- Social Icons -->
         <div class="flex space-x-6 mt-6">
-          <a href="#" aria-label="Facebook" class="hover:opacity-75">
+          <a href="https://www.facebook.com/profile.php?id=61575197797774" target="_blank" rel="noopener" aria-label="Facebook" class="hover:opacity-75">
             <NuxtImg src="/img/facebook.png" alt="Facebook" class="w-8 h-8" />
           </a>
-          <a href="#" aria-label="Instagram" class="hover:opacity-75">
+          <a href="https://www.instagram.com/move_dance_sport_academy/" target="_blank" rel="noopener" aria-label="Instagram" class="hover:opacity-75">
             <NuxtImg src="/img/insta.png" alt="Instagram" class="w-8 h-8" />
           </a>
-          <a href="#" aria-label="YouTube" class="hover:opacity-75">
+          <a href="https://www.youtube.com/@movedancesportacademy" target="_blank" rel="noopener" aria-label="YouTube" class="hover:opacity-75">
             <NuxtImg src="/img/youtube.png" alt="YouTube" class="w-8 h-8" />
           </a>
         </div>
@@ -36,10 +36,15 @@
             Office: 119-35 Insurance Building,<br />
             Al Rega Dubai, UAE
           </address>
-          <p class="mt-4 text-sm">
-            Phone: <a href="tel:+971585698182" class="underline">+971 58 569 8182</a><br />
-            <a href="mailto:info@movedsa.com" class="underline">info@movedsa.com</a>
-          </p>
+          <div class="mt-4 text-sm">
+            <p class="font-semibold">Office:</p>
+            <p>Phone: <a href="tel:+971585698182" class="underline">+971 58 569 8182</a></p>
+            <p><a href="mailto:info@movedsa.com" class="underline">info@movedsa.com</a></p>
+            
+            <p class="font-semibold mt-3">Admin:</p>
+            <p>Phone: <a href="tel:+971506176658" class="underline">+971 50 617 6658</a></p>
+            <p><a href="mailto:admin@movedsa.com" class="underline">admin@movedsa.com</a></p>
+          </div>
         </div>
 
         <!-- Studio Credit -->

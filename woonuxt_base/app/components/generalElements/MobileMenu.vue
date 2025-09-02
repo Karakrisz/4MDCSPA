@@ -4,7 +4,7 @@ const { toggleMobileMenu } = useHelpers();
 const links = [
   { text: 'HOME', to: '/', prefetch: false },
   { text: 'INTRODUCING', to: '/#about', prefetch: false },
-  { text: 'CHAMPIONS', to: '/#champions', prefetch: false },
+  { text: 'UPCOMING EVENTS', to: '/#champions', prefetch: false },
   { text: 'COACHES', to: '/#COACHES', prefetch: false },
   { text: 'COMPETITIONS', to: '/#COMPETITIONS', prefetch: false },
   { text: 'MEDIA', to: '/#MEDIA', prefetch: false },

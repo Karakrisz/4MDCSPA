@@ -65,7 +65,7 @@ useHead({
           <!-- Contact Info -->
           <div
             class="bg-gradient-to-r from-[#ff29f7] to-[#24d3ee] p-3 rounded-lg transform hover:scale-105 transition-all duration-300 hover:shadow-lg hover:shadow-[#ff29f7]/25">
-            <p class="text-white font-semibold text-base">+36 70 617 6179</p>
+            <p class="text-white font-semibold text-base">+971 56 164 7617</p>
             <p class="text-white font-semibold text-sm">info@movedsa.com</p>
           </div>
 

@@ -2,7 +2,7 @@
 const links = [
   { name: 'HOME', link: '/', prefetch: true },
   { name: 'INTRODUCING', link: '/#about'},
-  { name: 'CHAMPIONS', link: '/#champions' },
+  { name: 'UPCOMING EVENTS', link: '/#champions' },
   { name: 'COACHES', link: '/#COACHES' },
   { name: 'COMPETITIONS', link: '/#COMPETITIONS' },
   { name: 'MEDIA', link: '/#MEDIA' },
