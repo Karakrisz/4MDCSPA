@@ -115,13 +115,13 @@ onMounted(() => {
             corporate galas.
           </p>
           <div class="mt-6 flex flex-col sm:flex-row justify-center gap-6">
-            <button class="bg-[#FE2AF7] text-[16px] text-black uppercase font-bold py-4 px-20 shadow-lg cta-button opacity-0">
-              Request a Call
-            </button>
-            <button class="bg-[#FE2AF7] text-[16px] text-black uppercase font-bold py-4 px-20 shadow-lg cta-button opacity-0">
-              Request a Quote
-            </button>
-          </div>
+        <a href="tel:+971561647617" class="bg-[#FE2AF7] text-[16px] text-black uppercase font-bold py-4 px-20 shadow-lg cta-button opacity-0 rounded-lg text-center no-underline hover:bg-opacity-90">
+            📞 Request a Call
+        </a>
+        <a href="mailto:info@movedsa.com?subject=Quote%20Request&body=Hello,%0A%0AI%20would%20like%20to%20request%20a%20quote%20for%20your%20services.%0A%0AThank%20you!" class="bg-[#FE2AF7] text-[16px] text-black uppercase font-bold py-4 px-20 shadow-lg cta-button opacity-0 rounded-lg text-center no-underline hover:bg-opacity-90">
+            ✉️ Request a Quote
+        </a>
+    </div>
         </div>
       </div>
     </div>

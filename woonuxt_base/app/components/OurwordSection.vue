@@ -47,26 +47,12 @@ const allChampions = [
   { category: 'Ladies Formation', names: 'The Szupergirls', year: '2024' },
 ];
 
-// Mobil nézethez szűrt bajnokok - évente maximum 1
-const getMobileChampions = () => {
-  const yearGroups = {};
-  
-  // Csoportosítás év szerint
-  allChampions.forEach(champion => {
-    if (!yearGroups[champion.year]) {
-      yearGroups[champion.year] = [];
-    }
-    yearGroups[champion.year].push(champion);
-  });
-  
-  // Évente az első bajnok kiválasztása
-  return Object.values(yearGroups).map(yearChampions => yearChampions[0]);
-};
-
 import { ref, onMounted, onUnmounted, nextTick, computed } from 'vue'
 
 const championsSection = ref(null)
 const isMobile = ref(false)
+const mobileVisibleCount = ref(4)
+const isLoadingMore = ref(false)
 
 // Mobil eszköz detektálása
 const detectMobile = () => {
@@ -76,36 +62,62 @@ const detectMobile = () => {
 
 // Bajnokok kiválasztása eszköz típus szerint
 const champions = computed(() => {
-  return isMobile.value ? getMobileChampions() : allChampions;
+  if (isMobile.value) {
+    return allChampions.slice(0, mobileVisibleCount.value);
+  }
+  return allChampions;
 });
 
-onMounted(async () => {
-  await nextTick();
+// Van-e még több bajnok mobilon
+const hasMoreChampions = computed(() => {
+  return isMobile.value && mobileVisibleCount.value < allChampions.length;
+});
+
+// Még hány bajnok van hátra
+const remainingChampions = computed(() => {
+  return allChampions.length - mobileVisibleCount.value;
+});
+
+// Load More funkció
+const loadMoreChampions = async () => {
+  if (isLoadingMore.value) return;
   
-  // Mobil detektálás
+  isLoadingMore.value = true;
+  
+  // Animált loading
+  await new Promise(resolve => setTimeout(resolve, 300));
+  
+  const nextBatch = Math.min(4, allChampions.length - mobileVisibleCount.value);
+  mobileVisibleCount.value += nextBatch;
+  
+  isLoadingMore.value = false;
+  
+  // Újra animáljuk az új kártyákat
+  await nextTick();
+  setupAnimations();
+};
+
+// Resize handler függvény
+const handleResize = () => {
+  const wasMobile = isMobile.value;
   isMobile.value = detectMobile();
   
-  // Resize listener
-  const handleResize = () => {
-    const wasMobile = isMobile.value;
-    isMobile.value = detectMobile();
-    
-    // Ha változott a mobil/desktop állapot, újra animálunk
-    if (wasMobile !== isMobile.value) {
-      // Rövid késleltetés után újra indítjuk az animációkat
-      setTimeout(() => {
-        setupAnimations();
-      }, 100);
-    }
-  };
-  window.addEventListener('resize', handleResize);
-
-  setupAnimations();
-
-  onUnmounted(() => {
-    window.removeEventListener('resize', handleResize);
-  })
-});
+  // Ha desktop-ra váltunk, mutassuk az összeset
+  if (wasMobile && !isMobile.value) {
+    mobileVisibleCount.value = allChampions.length;
+  }
+  // Ha mobilra váltunk, kezdjük elölről
+  else if (!wasMobile && isMobile.value) {
+    mobileVisibleCount.value = 4;
+  }
+  
+  // Ha változott a mobil/desktop állapot, újra animálunk
+  if (wasMobile !== isMobile.value) {
+    setTimeout(() => {
+      setupAnimations();
+    }, 100);
+  }
+};
 
 const setupAnimations = () => {
   // Intersection Observer a kártyák animációjához
@@ -125,7 +137,7 @@ const setupAnimations = () => {
 
   // Animálandó elemek megfigyelése
   const elementsToAnimate = championsSection.value?.querySelectorAll(
-    '.champions-heading, .champions-description, .champion-card, .cta-heading, .cta-button'
+    '.champions-heading, .champions-description, .champion-card, .cta-heading, .cta-button, .load-more-button'
   )
 
   elementsToAnimate?.forEach((el, index) => {
@@ -138,6 +150,23 @@ const setupAnimations = () => {
     observer.observe(el)
   })
 };
+
+onMounted(async () => {
+  await nextTick();
+  
+  // Mobil detektálás
+  isMobile.value = detectMobile();
+  
+  // Resize listener hozzáadása
+  window.addEventListener('resize', handleResize);
+
+  setupAnimations();
+});
+
+// onUnmounted hook közvetlenül a setup() függvény tetején
+onUnmounted(() => {
+  window.removeEventListener('resize', handleResize);
+});
 </script>
 
 <template>
@@ -197,10 +226,35 @@ const setupAnimations = () => {
         </div>
       </div>
 
-      <!-- Mobile-only "Show All" button -->
-      <div v-if="isMobile" class="text-center mt-8">
-        <p class="text-white/70 text-sm">
-          Showing {{ champions.length }} of {{ allChampions.length }} champions (1 per year)
+      <!-- Mobile Load More Button -->
+      <div v-if="hasMoreChampions" class="text-center mt-12">
+        <button 
+          @click="loadMoreChampions"
+          :disabled="isLoadingMore"
+          class="load-more-button opacity-0 relative overflow-hidden bg-gradient-to-r from-cyan-400 to-[#FE2AF7] text-black font-bold text-[16px] uppercase px-8 py-4 rounded-lg shadow-lg transition-all duration-300 hover:shadow-2xl hover:shadow-cyan-400/30 disabled:opacity-70 disabled:cursor-not-allowed group"
+        >
+          <div class="relative z-10 flex items-center justify-center space-x-2">
+            <span v-if="!isLoadingMore">
+              Show More Champions
+            </span>
+            <span v-else class="flex items-center space-x-2">
+              <svg class="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <span>Loading...</span>
+            </span>
+            <div v-if="!isLoadingMore" class="bg-black/20 rounded-full px-3 py-1 text-sm">
+              +{{ Math.min(4, remainingChampions) }}
+            </div>
+          </div>
+          
+          <!-- Button shine effect -->
+          <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out"></div>
+        </button>
+        
+        <p class="text-white/60 text-sm mt-3">
+          Showing {{ champions.length }} of {{ allChampions.length }} champions
         </p>
       </div>
     </div>
@@ -224,6 +278,7 @@ const setupAnimations = () => {
 </template>
 
 <style scoped>
+/* [A CSS stílusok változatlanok maradnak] */
 /* Háttér animációk */
 .bg-container {
   overflow: hidden;
@@ -284,6 +339,39 @@ const setupAnimations = () => {
 .champion-card.animate-in {
   opacity: 1;
   transform: translateY(0) rotateX(0deg);
+}
+
+/* Load More Button animációk */
+.load-more-button {
+  transform: translateY(20px);
+  opacity: 1;
+  transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: fadeInUp 0.8s ease-out forwards;
+}
+
+@keyframes fadeInUp {
+  0% {
+    opacity: 0;
+    transform: translateY(40px) scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.load-more-button.animate-in {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.load-more-button:hover {
+  transform: translateY(-3px) scale(1.05);
+  box-shadow: 0 20px 40px rgba(0, 188, 212, 0.3), 0 20px 40px rgba(254, 42, 247, 0.2);
+}
+
+.load-more-button:active {
+  transform: translateY(-1px) scale(1.02);
 }
 
 /* Kártya hover overlay */
@@ -412,6 +500,19 @@ const setupAnimations = () => {
   .champion-card.animate-in {
     transform: translateY(0) scale(1);
   }
+  
+  .load-more-button {
+    font-size: 14px;
+    px: 6;
+    py: 3;
+  }
+}
+
+/* Desktop esetén elrejtjük a load more gombot */
+@media (min-width: 769px) {
+  .load-more-button {
+    display: none !important;
+  }
 }
 
 /* Accessibility - prefers-reduced-motion */
@@ -425,7 +526,8 @@ const setupAnimations = () => {
   .champions-description,
   .champion-card,
   .cta-heading,
-  .cta-button {
+  .cta-button,
+  .load-more-button {
     opacity: 1;
     transform: none;
     transition: none;

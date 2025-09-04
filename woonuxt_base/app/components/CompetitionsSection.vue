@@ -1,29 +1,192 @@
 <script setup>
+import { ref, onMounted, onUnmounted, nextTick } from 'vue'
+
 // Az aktuális események - csak az első 3 megjelenítése a főoldalon
 const competitions = [
   { 
     title: 'Grand Opening - First Open Training', 
     location: 'Dubai, UAE', 
     date: 'Fri, 30 Aug',
-    type: 'Grand Opening'
+    type: 'Grand Opening',
+    image: '/img/upcomming/1.webp'
   },
   { 
     title: 'GEMS FirstPoint School - Sign-up day', 
     location: 'GEMS FirstPoint School', 
     date: 'Sun, 1 Sept',
-    type: 'Sign-up'
+    type: 'Sign-up',
+    image: '/img/upcomming/2.png'
   },
   { 
     title: 'Raffles World Academy - First AACA training', 
     location: 'Raffles World Academy', 
     date: 'Sun, 8 Sept',
-    type: 'Training'
+    type: 'Training',
+    image: '/img/upcomming/3.png'
   }
 ];
 
-import { ref, onMounted, onUnmounted } from 'vue'
-
 const competitionsSection = ref(null)
+const videoRef = ref(null)
+const videoLoaded = ref(false)
+const videoError = ref(false)
+const isMobile = ref(false)
+
+// Mobil eszköz detektálása
+const detectMobile = () => {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+    window.innerWidth <= 768;
+};
+
+// Agresszív autoplay próbálkozások
+const forceAutoplay = async (video) => {
+  const playPromises = [];
+  
+  // 1. Alapvető play próbálkozás
+  playPromises.push(
+    video.play().catch(e => {
+      console.log('Basic autoplay failed:', e.message);
+      return null;
+    })
+  );
+
+  // 2. Késleltetett próbálkozás
+  playPromises.push(
+    new Promise(resolve => {
+      setTimeout(() => {
+        video.play().then(resolve).catch(() => resolve(null));
+      }, 100);
+    })
+  );
+
+  // 3. Volume = 0 próbálkozás (ha muted nem működik)
+  if (!video.muted) {
+    video.volume = 0;
+    playPromises.push(
+      video.play().catch(() => null)
+    );
+  }
+
+  // 4. User gesture szimuláció
+  playPromises.push(
+    new Promise(resolve => {
+      const tryPlay = () => {
+        video.play().then(resolve).catch(() => resolve(null));
+        document.removeEventListener('touchstart', tryPlay);
+        document.removeEventListener('touchend', tryPlay);
+        document.removeEventListener('click', tryPlay);
+      };
+      
+      document.addEventListener('touchstart', tryPlay, { once: true, passive: true });
+      document.addEventListener('touchend', tryPlay, { once: true, passive: true });
+      document.addEventListener('click', tryPlay, { once: true });
+      
+      // Timeout after 2 seconds
+      setTimeout(() => resolve(null), 2000);
+    })
+  );
+
+  return Promise.race(playPromises);
+};
+
+// Videó dinamikus betöltése
+const loadVideo = async () => {
+  if (!videoRef.value) return;
+
+  try {
+    const videoPaths = ['/video/ourword_reel.mp4'];
+    let videoPath = null;
+
+    for (const path of videoPaths) {
+      try {
+        const response = await fetch(path, { method: 'HEAD' });
+        if (response.ok) {
+          videoPath = path;
+          break;
+        }
+      } catch (e) {
+        continue;
+      }
+    }
+
+    if (videoPath) {
+      videoRef.value.src = videoPath;
+      
+      // Agresszív mobil beállítások
+      if (isMobile.value) {
+        videoRef.value.setAttribute('playsinline', '');
+        videoRef.value.setAttribute('webkit-playsinline', '');
+        videoRef.value.setAttribute('x-webkit-airplay', 'allow');
+        videoRef.value.muted = true;
+        videoRef.value.volume = 0;
+        videoRef.value.defaultMuted = true;
+        videoRef.value.controls = false;
+        videoRef.value.disablePictureInPicture = true;
+        videoRef.value.setAttribute('disableRemotePlayback', '');
+      }
+
+      videoRef.value.load();
+      console.log(`Competition video loaded from: ${videoPath}`);
+    } else {
+      throw new Error('Video file not found in any expected location');
+    }
+  } catch (error) {
+    console.warn('Competition video not available, using fallback image:', error);
+    videoError.value = true;
+  }
+};
+
+// Videó betöltődött
+const onVideoLoaded = () => {
+  if (videoRef.value && !videoError.value) {
+    videoRef.value.currentTime = 13;
+  }
+};
+
+// Videó készen áll
+const onVideoCanPlay = async () => {
+  if (videoRef.value && !videoError.value) {
+    videoLoaded.value = true;
+    
+    try {
+      // Agresszív autoplay kísérlet
+      await forceAutoplay(videoRef.value);
+      console.log('Competition video autoplay successful');
+    } catch (e) {
+      console.warn('All autoplay attempts failed:', e);
+      // Itt sem adunk fel, próbálkozunk tovább
+      continuousPlayAttempts();
+    }
+  }
+};
+
+// Folyamatos lejátszási kísérletek
+const continuousPlayAttempts = () => {
+  let attempts = 0;
+  const maxAttempts = 20;
+  
+  const tryPlay = () => {
+    if (attempts >= maxAttempts || !videoRef.value || videoError.value) return;
+    
+    attempts++;
+    videoRef.value.play()
+      .then(() => {
+        console.log(`Competition video started after ${attempts} attempts`);
+      })
+      .catch(() => {
+        setTimeout(tryPlay, 500); // Próbálkozás 500ms múlva
+      });
+  };
+  
+  tryPlay();
+};
+
+// Error handling
+const onVideoError = (e) => {
+  console.warn('Competition video loading failed, using fallback image', e);
+  videoError.value = true;
+  videoLoaded.value = false;
+};
 
 // Router navigáció a teljes lista oldalra
 const navigateToAllEvents = () => {
@@ -31,12 +194,43 @@ const navigateToAllEvents = () => {
   console.log('Navigate to all competitions page')
 }
 
-onMounted(() => {
-  const observer = new IntersectionObserver(
+// Refs a cleanup-hez
+let observer = null;
+let handleResize = null;
+
+onMounted(async () => {
+  await nextTick();
+  
+  isMobile.value = detectMobile();
+  
+  // Resize listener
+  handleResize = () => {
+    isMobile.value = detectMobile();
+  };
+  window.addEventListener('resize', handleResize);
+
+  // Videó betöltése rövidebb késleltetéssel
+  setTimeout(() => {
+    loadVideo();
+  }, 200);
+
+  observer = new IntersectionObserver(
     (entries) => {
       entries.forEach((entry) => {
         if (entry.isIntersecting) {
           entry.target.classList.add('animate-in')
+          
+          // Videó lejátszás ha látható
+          if (videoRef.value && videoLoaded.value && videoRef.value.paused) {
+            videoRef.value.play().catch(() => {
+              continuousPlayAttempts();
+            });
+          }
+        } else {
+          // Videó megállítása ha nem látható
+          if (videoRef.value && videoLoaded.value) {
+            videoRef.value.pause();
+          }
         }
       })
     },
@@ -59,21 +253,80 @@ onMounted(() => {
     observer.observe(el)
   })
 
-  onUnmounted(() => {
+  // Dokumentum interakciók figyelése
+  const enableVideoOnInteraction = () => {
+    if (videoRef.value && videoLoaded.value && videoRef.value.paused) {
+      videoRef.value.play().catch(() => {});
+    }
+  };
+
+  // Passzív event listener-ek
+  document.addEventListener('touchstart', enableVideoOnInteraction, { passive: true });
+  document.addEventListener('touchend', enableVideoOnInteraction, { passive: true });
+  document.addEventListener('scroll', enableVideoOnInteraction, { passive: true });
+  document.addEventListener('click', enableVideoOnInteraction, { passive: true });
+})
+
+// Cleanup - külön onUnmounted hook
+onUnmounted(() => {
+  if (observer) {
     observer.disconnect()
-  })
+  }
+  
+  // Videó cleanup
+  if (videoRef.value) {
+    videoRef.value.pause();
+    videoRef.value.removeAttribute('src');
+    videoRef.value.load();
+  }
+  
+  if (handleResize) {
+    window.removeEventListener('resize', handleResize);
+  }
+  
+  // Event listener cleanup
+  const enableVideoOnInteraction = () => {};
+  document.removeEventListener('touchstart', enableVideoOnInteraction);
+  document.removeEventListener('touchend', enableVideoOnInteraction);
+  document.removeEventListener('scroll', enableVideoOnInteraction);
+  document.removeEventListener('click', enableVideoOnInteraction);
 })
 </script>
 
 <template>
   <section class="relative text-white competitions-section" ref="competitionsSection" id="COMPETITIONS">
-    <!-- Background image -->
+    <!-- Background Video -->
     <div class="absolute inset-0 bg-container">
-      <NuxtImg 
-        src="/img/com.webp" 
-        alt="Competitions background" 
-        class="w-full h-full object-cover bg-image" 
-      />
+      <!-- Háttér videó -->
+      <video 
+        ref="videoRef"
+        class="w-full h-full object-cover bg-video competition-video" 
+        :class="{ 'mobile-video': isMobile }"
+        muted 
+        playsinline 
+        webkit-playsinline
+        autoplay 
+        loop
+        :preload="isMobile ? 'auto' : 'auto'"
+        disablePictureInPicture
+        x-webkit-airplay="allow"
+        :style="{ objectFit: 'cover', objectPosition: 'center' }"
+        @loadeddata="onVideoLoaded"
+        @error="onVideoError"
+        @canplay="onVideoCanPlay"
+        @loadedmetadata="onVideoCanPlay"
+      >
+        <!-- Fallback kép ha a videó nem töltődik be -->
+      </video>
+      
+      <!-- Fallback kép -->
+      <NuxtImg
+        v-show="!videoLoaded || videoError"
+        src="/img/com.webp"
+        format="webp"
+        class="absolute inset-0 object-cover w-full h-full pointer-events-none competition-bg"
+        alt="Competitions background" />
+      
       <div class="absolute inset-0 bg-black opacity-60 bg-overlay"></div>
     </div>
 
@@ -90,13 +343,14 @@ onMounted(() => {
           :key="idx" 
           class="flex items-center py-4 border-b last:border-0 competition-item opacity-0"
         >
-          <div class="w-20 h-20 bg-gray-200 rounded mr-6 flex-shrink-0 competition-icon">
-            <!-- Event type based icon -->
-            <div class="w-full h-full rounded bg-gradient-to-br from-gray-300 to-gray-400 flex items-center justify-center icon-content">
-              <div v-if="comp.type === 'Grand Opening'" class="w-8 h-8 border-4 border-[#00BCD4] rounded-full animate-pulse"></div>
-              <div v-else-if="comp.type === 'Sign-up'" class="w-6 h-6 bg-[#FE2AF7] rounded"></div>
-              <div v-else class="w-8 h-8 border-4 border-[#242424] rounded-full animate-pulse"></div>
-            </div>
+          <div class="w-20 h-20 bg-gray-200 rounded mr-6 flex-shrink-0 competition-icon overflow-hidden">
+            <!-- Event képek -->
+            <NuxtImg
+              :src="comp.image"
+              :alt="`${comp.title} image`"
+              class="w-full h-full object-cover rounded transition-transform duration-300 hover:scale-110"
+              loading="lazy"
+            />
           </div>
           <div class="competition-details">
             <h3 class="text-[20px] font-extrabold text-[#242424] font-unbounded competition-title">
@@ -132,28 +386,62 @@ onMounted(() => {
   align-items: center;
 }
 
-/* Háttér animációk */
+/* Háttér videó */
 .bg-container {
   overflow: hidden;
+  min-height: 100vh;
 }
 
-.bg-image {
+.bg-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  min-width: 100%;
+  min-height: 100%;
+}
+
+/* Videó optimalizálás - hero-ból átvéve */
+.competition-video {
+  transform: scale(1.02);
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  opacity: 0;
+  animation: fadeInVideo 1s ease-out 0.2s forwards;
+}
+
+/* Mobil videó specifikus stílusok */
+.mobile-video {
   transform: scale(1.1);
-  animation: backgroundDrift 25s ease-in-out infinite;
+  object-position: center center;
 }
 
-@keyframes backgroundDrift {
-  0%, 100% {
-    transform: scale(1.1) translateX(0px) translateY(0px);
+@keyframes fadeInVideo {
+  to {
+    opacity: 1;
   }
-  25% {
-    transform: scale(1.15) translateX(-20px) translateY(-10px);
+}
+
+/* Fallback animáció */
+.competition-bg {
+  animation: backgroundFloat 20s ease-in-out infinite;
+}
+
+@keyframes backgroundFloat {
+  0%, 100% {
+    transform: scale(1) translateY(0px);
   }
   50% {
-    transform: scale(1.12) translateX(15px) translateY(-5px);
+    transform: scale(1.05) translateY(-10px);
   }
-  75% {
-    transform: scale(1.18) translateX(-10px) translateY(10px);
+}
+
+/* Safari és iOS specifikus videó javítások */
+@supports (-webkit-appearance: none) {
+  .bg-video {
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
   }
 }
 
@@ -234,36 +522,22 @@ onMounted(() => {
   transition-delay: calc(1.2s + var(--item-delay, 0s));
 }
 
-/* Icon animációk */
+/* Icon animációk - most képekre módosítva */
 .competition-icon {
   transform: scale(0) rotate(-180deg);
   transition: all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) calc(0.8s + var(--item-delay, 0s));
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .competition-item.animate-in .competition-icon {
   transform: scale(1) rotate(0deg);
 }
 
-.icon-content {
-  position: relative;
-  overflow: hidden;
-}
-
-.icon-content::after {
-  content: '';
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: linear-gradient(45deg, transparent, rgba(0, 188, 212, 0.3), transparent);
-  transform: rotate(45deg);
-  animation: iconShimmer 2s ease-in-out infinite;
-}
-
-@keyframes iconShimmer {
-  0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
-  100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+/* Kép hover effekt */
+.competition-icon:hover {
+  transform: scale(1.05) rotate(2deg);
+  box-shadow: 0 8px 25px rgba(0, 188, 212, 0.3);
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 /* Verseny részletek animációi */
@@ -320,11 +594,6 @@ onMounted(() => {
   transform: translateX(5px);
 }
 
-.competition-item:hover .competition-icon {
-  transform: scale(1.1) rotate(5deg);
-  box-shadow: 0 5px 15px rgba(0, 188, 212, 0.3);
-}
-
 .competition-item:hover .competition-date::after {
   opacity: 1;
   animation: none;
@@ -373,6 +642,10 @@ onMounted(() => {
   .competitions-box {
     transform: translateY(50px);
   }
+  
+  .competition-video {
+    transform: scale(1.15);
+  }
 }
 
 @media (max-width: 768px) {
@@ -394,9 +667,19 @@ onMounted(() => {
   }
 }
 
+/* Alacsony sávszélesség - csak nagyon régi eszközökön */
+@media (max-width: 360px) and (max-resolution: 1dppx) {
+  .competition-video {
+    display: none !important;
+  }
+
+  .competition-bg {
+    display: block !important;
+  }
+}
+
 /* Accessibility - prefers-reduced-motion */
 @media (prefers-reduced-motion: reduce) {
-  .bg-image,
   .bg-overlay {
     animation: none;
   }
@@ -424,16 +707,18 @@ onMounted(() => {
     transform: translateY(0);
   }
   
-  .icon-content::after {
-    display: none;
-  }
-  
   .competition-date::after {
     display: none;
   }
   
   .show-all-button::before {
     display: none;
+  }
+  
+  .competition-video {
+    animation: none !important;
+    opacity: 1;
+    transform: scale(1.02);
   }
 }
 
@@ -466,20 +751,9 @@ onMounted(() => {
   opacity: 0.5;
 }
 
-/* Loading skeleton a verseny elemekhez */
-.competition-item:not(.animate-in) .competition-icon {
-  background: linear-gradient(90deg, #f0f0f0, #e0e0e0, #f0f0f0);
-  background-size: 200% 100%;
-  animation: skeletonShimmer 1.5s infinite;
-}
-
-@keyframes skeletonShimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
-}
-
-.competition-item.animate-in .competition-icon {
-  animation: none;
-  background: linear-gradient(to bottom right, #e2e8f0, #cbd5e0);
+/* Performance hints */
+.competition-video {
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 </style>

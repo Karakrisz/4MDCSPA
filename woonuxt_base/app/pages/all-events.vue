@@ -6,21 +6,24 @@ const allEvents = [
     location: 'Dubai, UAE', 
     date: 'Fri, 30 Aug',
     type: 'Grand Opening',
-    status: 'active'
+    status: 'active',
+    image: '/img/upcomming/1.webp'
   },
   { 
     title: 'GEMS FirstPoint School - Sign-up day', 
     location: 'GEMS FirstPoint School', 
     date: 'Sun, 1 Sept',
     type: 'Sign-up',
-    status: 'active'
+    status: 'active',
+    image: '/img/upcomming/2.png'
   },
   { 
     title: 'Raffles World Academy - First AACA training', 
     location: 'Raffles World Academy', 
     date: 'Sun, 8 Sept',
     type: 'Training',
-    status: 'upcoming'
+    status: 'upcoming',
+    image: '/img/upcomming/3.png'
   },
   { 
     title: 'GEMS FirstPoint School - ASA First training', 
@@ -28,21 +31,24 @@ const allEvents = [
     date: 'Mon, 9 Sept',
     type: 'Training',
     status: 'upcoming',
-    registration: 'https://esm.ae/login'
+    registration: 'https://esm.ae/login',
+    image: '/img/upcomming/4.png'
   },
   { 
     title: 'Raffles International School - First CCA training', 
     location: 'Raffles International School', 
     date: 'Wed, 11 Sept',
     type: 'Training',
-    status: 'upcoming'
+    status: 'upcoming',
+    image: '/img/upcomming/5.png'
   },
   { 
     title: 'GEMS World Academy - First Academic training', 
     location: 'GEMS World Academy', 
     date: 'Sun, 15 Sept',
     type: 'Training',
-    status: 'upcoming'
+    status: 'upcoming',
+    image: '/img/upcomming/6.png'
   },
   { 
     title: 'Deira International School - First Academic training', 
@@ -50,7 +56,8 @@ const allEvents = [
     date: 'Sun, 15 Sept',
     type: 'Training',
     status: 'upcoming',
-    note: 'ECA Coming Soon'
+    note: 'ECA Coming Soon',
+    image: '/img/upcomming/7.png'
   },
   { 
     title: 'GEMS Metropole School - Motor city - First Academic training', 
@@ -58,7 +65,8 @@ const allEvents = [
     date: 'Mon, 16 Sept',
     type: 'Training',
     status: 'upcoming',
-    note: 'ASA Coming Soon'
+    note: 'ASA Coming Soon',
+    image: '/img/upcomming/8.png'
   },
   { 
     title: 'Dubai Schools - Al Khawaneej - First Academic training', 
@@ -66,14 +74,16 @@ const allEvents = [
     date: 'Mon, 16 Sept',
     type: 'Training',
     status: 'upcoming',
-    note: 'ECA Coming Soon'
+    note: 'ECA Coming Soon',
+    image: '/img/upcomming/9.png'
   },
   { 
     title: 'Dubai International Academy - Al Barsha - First CCA training', 
     location: 'Dubai International Academy - Al Barsha', 
     date: 'Wed, 18 Sept',
     type: 'Training',
-    status: 'upcoming'
+    status: 'upcoming',
+    image: '/img/upcomming/10.png'
   },
   { 
     title: 'GEMS Metropole School- Al Waha - First Academic training', 
@@ -81,14 +91,16 @@ const allEvents = [
     date: 'Thu, 19 Sept',
     type: 'Training',
     status: 'upcoming',
-    note: 'ASA Coming Soon'
+    note: 'ASA Coming Soon',
+    image: '/img/upcomming/11.png'
   },
   { 
     title: 'First national competition - Move Dance Contest in the UAE', 
     location: 'UAE', 
     date: 'Spring 2026',
     type: 'Competition',
-    status: 'planned'
+    status: 'planned',
+    image: '/img/upcomming/11.png'
   }
 ];
 
@@ -181,15 +193,15 @@ onMounted(() => {
     <div class="relative container mx-auto px-4 py-16">
       <!-- Header -->
       <div class="flex items-center justify-between mt-[100px] mb-12">
-        <button 
-          @click="goBack"
+        <NuxtLink 
+          to="/"
           class="flex items-center space-x-2 text-white/80 hover:text-white transition-colors duration-300 group"
         >
           <svg class="w-6 h-6 transform group-hover:-translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
           </svg>
           <span class="text-lg font-semibold">Back</span>
-        </button>
+        </NuxtLink>
         
         <h1 class="page-title text-[32px] lg:text-[48px] font-extrabold font-unbounded text-center bg-gradient-to-r from-[#00BCD4] to-[#FE2AF7] bg-clip-text text-transparent">
           ALL EVENTS
@@ -247,18 +259,14 @@ onMounted(() => {
               </span>
             </div>
 
-            <!-- Event Icon -->
-            <div class="w-16 h-16 bg-gray-200 rounded mr-0 mb-4 flex-shrink-0 competition-icon group-hover:scale-110 transition-transform duration-300">
-              <div class="w-full h-full rounded bg-gradient-to-br from-gray-300 to-gray-400 flex items-center justify-center icon-content">
-                <div v-if="event.type === 'Grand Opening'" class="w-8 h-8 border-4 border-[#00BCD4] rounded-full animate-pulse"></div>
-                <div v-else-if="event.type === 'Sign-up'" class="w-6 h-6 bg-[#FE2AF7] rounded"></div>
-                <div v-else-if="event.type === 'Competition'" class="w-8 h-8">
-                  <svg fill="#242424" viewBox="0 0 24 24">
-                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-                  </svg>
-                </div>
-                <div v-else class="w-8 h-8 border-4 border-[#242424] rounded-full animate-pulse"></div>
-              </div>
+            <!-- Event Image -->
+            <div class="w-16 h-16 bg-gray-200 rounded mr-0 mb-4 flex-shrink-0 competition-icon group-hover:scale-110 transition-transform duration-300 overflow-hidden">
+              <NuxtImg
+                :src="event.image"
+                :alt="`${event.title} image`"
+                class="w-full h-full object-cover rounded transition-transform duration-300 hover:scale-110"
+                loading="lazy"
+              />
             </div>
 
             <!-- Event Details -->
@@ -470,36 +478,22 @@ onMounted(() => {
   transform: translateY(0);
 }
 
-/* Icon animációk - ugyanaz, mint a főoldalon */
+/* Icon animációk - képekre módosítva */
 .competition-icon {
   transform: scale(0) rotate(-180deg);
   transition: all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) calc(0.8s + var(--item-delay, 0s));
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .event-card.animate-in .competition-icon {
   transform: scale(1) rotate(0deg);
 }
 
-.icon-content {
-  position: relative;
-  overflow: hidden;
-}
-
-.icon-content::after {
-  content: '';
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: linear-gradient(45deg, transparent, rgba(0, 188, 212, 0.3), transparent);
-  transform: rotate(45deg);
-  animation: iconShimmer 2s ease-in-out infinite;
-}
-
-@keyframes iconShimmer {
-  0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
-  100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+/* Kép hover effekt */
+.competition-icon:hover {
+  transform: scale(1.05) rotate(2deg);
+  box-shadow: 0 8px 25px rgba(0, 188, 212, 0.3);
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 /* Responsive */
@@ -543,10 +537,6 @@ onMounted(() => {
   
   .competition-icon {
     transform: scale(1) rotate(0deg);
-  }
-  
-  .icon-content::after {
-    display: none;
   }
 }
 </style>
