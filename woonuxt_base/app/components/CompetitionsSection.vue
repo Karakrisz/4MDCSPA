@@ -368,10 +368,10 @@ onUnmounted(() => {
         <!-- Show All Button -->
         <div class="mt-8 text-center">
           <NuxtLink to="/all-events"
-            class="bg-[#242424] text-white text-[16px] uppercase font-bold py-4 px-20 shadow-lg show-all-button opacity-0 hover:bg-gradient-to-r hover:from-[#00BCD4] hover:to-[#FE2AF7] transition-all duration-300"
-          >
-            Show All Events
-          </NuxtLink>
+  class="bg-[#242424] text-white text-[16px] md:text-[16px] text-[9px] uppercase font-bold py-4 px-20 shadow-lg show-all-button opacity-0 hover:bg-gradient-to-r hover:from-[#00BCD4] hover:to-[#FE2AF7] transition-all duration-300"
+>
+  Show All Events
+</NuxtLink>
         </div>
       </div>
     </div>
